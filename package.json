@@ -23,7 +23,6 @@
     "openai": "^6.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-scripts": "5.0.1",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.4.1",
     "rxjs": "^7.8.2",
@@ -36,12 +35,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [
