@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '../src/index.css';
+import { MobileNotice } from '../src/components/ui/mobile-notice';
 
 export const metadata: Metadata = {
   title: 'Portfolio - Gireesh Veeranki',
@@ -18,7 +19,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        <MobileNotice />
+        {children}
+      </body>
     </html>
   );
 }
