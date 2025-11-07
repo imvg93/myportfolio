@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { ContainerScroll } from "./ui/container-scroll-animation";
 import Image from "next/image";
 import { 
@@ -18,8 +18,12 @@ import {
   Wrench,
   Users
 } from "lucide-react";
+import { ResumeRequestModal } from "@/components/ui/resume-request-modal";
+import { ContactNumberModal } from "@/components/ui/contact-number-modal";
 
 export function AboutMePage() {
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const techStack = ["JS", "React", "MongoDB", "Node.js"];
   const skills = [
     "Web App Development",
@@ -197,11 +201,17 @@ export function AboutMePage() {
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2 pt-2">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setIsResumeModalOpen(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
                   <Download className="w-4 h-4" />
                   Download Resume
                 </button>
-                <button className="w-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-black dark:text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="w-full bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-black dark:text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
                   <Mail className="w-4 h-4" />
                   Get in Touch
                 </button>
@@ -212,7 +222,14 @@ export function AboutMePage() {
       </ContainerScroll>
       
       {/* Additional About Me Content */}
-      -
+      <ResumeRequestModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+      />
+      <ContactNumberModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </div>
   );
 }

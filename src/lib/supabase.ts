@@ -49,10 +49,32 @@ export async function verifyAndConsumeOtp(email: string, code: string) {
   const isMatch = String(data.otp).trim() === String(code).trim();
   if (!isMatch || isExpired) return { valid: false };
 
-  // Consume OTP: delete row
-  await supabase.from('otp').delete().eq('email', email.toLowerCase());
+  // Mark OTP as consumed but keep record for auditing.
+  const consumedAt = new Date();
+  const expiredValue = new Date(consumedAt.getTime() - 1000).toISOString();
+  const updatePayload: Record<string, any> = { expiresAt: expiredValue };
+  if ('consumedAt' in (data as any)) {
+    updatePayload.consumedAt = consumedAt.toISOString();
+  } else if ('consumed_at' in (data as any)) {
+    updatePayload.consumed_at = consumedAt.toISOString();
+  }
+
+  await supabase.from('otp').update(updatePayload).eq('email', email.toLowerCase());
   const userName: string | undefined = (data as any).name ?? undefined;
   return { valid: true, name: userName };
+}
+
+export async function storeResumeRequest(name: string, email: string) {
+  const supabase = getSupabaseAdmin();
+  const timestamp = new Date().toISOString();
+  const payload = {
+    name,
+    email: email.toLowerCase(),
+    requested_at: timestamp,
+  };
+
+  const { error } = await supabase.from('resume_requests').insert(payload);
+  if (error) throw error;
 }
 
 

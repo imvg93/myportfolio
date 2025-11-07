@@ -106,7 +106,13 @@ export default function VerifyPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-4 sm:p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white border border-gray-200 shadow-xl p-5 sm:p-6">
+      <div className="w-full max-w-md rounded-2xl bg-white border border-gray-200 shadow-xl p-5 sm:p-6 relative">
+        <button
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+        >
+          ← Back
+        </button>
         <div className="mb-5 sm:mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-xs">Secure Access</div>
           <h1 className="mt-3 text-2xl font-semibold text-gray-900">Verify to continue</h1>
