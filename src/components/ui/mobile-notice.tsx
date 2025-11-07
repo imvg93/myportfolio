@@ -9,6 +9,9 @@ export function MobileNotice() {
   React.useEffect(() => {
     const checkMobile = () => {
       if (typeof window === "undefined") return false;
+      if (window.localStorage.getItem("mobile-notice-dismissed") === "true") {
+        return false;
+      }
       const width = window.innerWidth;
       const ua = navigator.userAgent || "";
       const isMobileUA = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|BlackBerry/i.test(ua);
@@ -40,7 +43,12 @@ export function MobileNotice() {
         </div>
         <button
           className="mt-1 rounded-full p-1.5 text-white/70 hover:text-white hover:bg-white/10 transition"
-          onClick={() => setShow(false)}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("mobile-notice-dismissed", "true");
+            }
+            setShow(false);
+          }}
           aria-label="Dismiss mobile notice"
         >
           <X className="w-4 h-4" />
