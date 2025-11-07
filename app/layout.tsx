@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '../src/index.css';
+import { Analytics } from '@vercel/analytics/react';
 import { MobileNotice } from '../src/components/ui/mobile-notice';
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body>
         <MobileNotice />
         {children}
+        <Analytics />
       </body>
     </html>
   );
