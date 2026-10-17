@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function AskMePage() {
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-hidden bg-gradient-to-b from-[#f0f7ff] via-[#f8fafc] to-[#ffffff] text-slate-900 antialiased selection:bg-cyan-500/20 selection:text-cyan-900">
+    <main className="fixed inset-0 h-[100dvh] w-full overflow-hidden overscroll-none bg-[#030712] text-slate-100 antialiased selection:bg-cyan-500/20 selection:text-cyan-900">
       <ChatClient />
     </main>
   );

@@ -52,7 +52,9 @@ export default function VerifyPage() {
       setResendIn(30);
       setOtp('');
       setOtpDigits(Array(6).fill(''));
-      requestAnimationFrame(() => otpRefs.current[0]?.focus());
+      if (window.matchMedia('(pointer: fine)').matches) {
+        requestAnimationFrame(() => otpRefs.current[0]?.focus());
+      }
     } catch (e: any) {
       setMessage(e?.message || 'Something went wrong while sending code');
     } finally {
@@ -133,7 +135,7 @@ export default function VerifyPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex items-center justify-center overflow-x-hidden bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] px-4 py-8 font-sans text-slate-800">
+    <div className="font-plus-jakarta relative flex min-h-[100dvh] w-full items-start justify-center overflow-x-hidden bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] px-3 pb-6 pt-20 font-sans text-slate-800 sm:items-center sm:px-4 sm:py-12">
       {/* LUMINOUS BRIGHT AURA BACKGROUND LIGHTING */}
       <div className="pointer-events-none absolute -top-24 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-blue-300/35 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-20 -z-10 h-[450px] w-[450px] rounded-full bg-cyan-200/40 blur-[130px]" />
@@ -151,7 +153,7 @@ export default function VerifyPage() {
       {/* TOP BACK TO PORTFOLIO BUTTON */}
       <button
         onClick={() => router.push('/')}
-        className="absolute top-4 left-4 z-20 group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-700 shadow-sm backdrop-blur-md transition-all hover:border-blue-400 hover:bg-white hover:text-slate-900"
+        className="absolute left-3 top-3 z-20 group inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur-md transition-all hover:border-blue-400 hover:bg-white hover:text-slate-900 sm:left-4 sm:top-4 sm:text-sm"
       >
         <ArrowLeft className="h-4 w-4 text-slate-500 transition-transform group-hover:-translate-x-1" />
         <span>Portfolio</span>
@@ -159,10 +161,10 @@ export default function VerifyPage() {
 
       {/* MAIN ANIMATED CARD CONTAINER */}
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: 'easeOut' }}
-        className="relative w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/85 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="relative w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/90 p-5 shadow-2xl backdrop-blur-2xl sm:p-8"
       >
         {/* Glowing Neural Brain Floating Badge */}
         <div className="flex flex-col items-center text-center">
@@ -174,7 +176,7 @@ export default function VerifyPage() {
               className="relative h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-full border-4 border-white bg-white p-0.5 shadow-xl shadow-cyan-500/20"
             >
               <Image
-                src="/gireesh-brain.jpg"
+                src="/gireesh-brain-cutout.png"
                 alt="Gireesh Mind"
                 width={80}
                 height={80}
@@ -205,10 +207,10 @@ export default function VerifyPage() {
             {step === 'form' ? (
               <motion.div
                 key="step-form"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
                 <div>
@@ -221,7 +223,8 @@ export default function VerifyPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Alex"
-                      className="w-full rounded-2xl border border-slate-300 bg-white/90 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      autoComplete="name"
+                      className="min-h-12 w-full rounded-2xl border border-slate-300 bg-white/90 pl-10 pr-4 py-3 text-base text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                     />
                   </div>
                 </div>
@@ -237,7 +240,8 @@ export default function VerifyPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       type="email"
                       placeholder="you@example.com"
-                      className="w-full rounded-2xl border border-slate-300 bg-white/90 pl-10 pr-4 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      autoComplete="email"
+                      className="min-h-12 w-full rounded-2xl border border-slate-300 bg-white/90 pl-10 pr-4 py-3 text-base text-slate-900 placeholder-slate-400 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                     />
                   </div>
                 </div>
@@ -265,10 +269,10 @@ export default function VerifyPage() {
             ) : (
               <motion.div
                 key="step-otp"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
                 {/* DEV MODE PROMINENT HELPER BANNER */}
@@ -311,7 +315,7 @@ export default function VerifyPage() {
                   </div>
 
                   {/* 6 INDIVIDUAL DIGIT INPUT BOXES */}
-                  <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                  <div className="flex items-center justify-between gap-1 sm:gap-2">
                     {otpDigits.map((d, i) => (
                       <input
                         key={i}
@@ -322,9 +326,11 @@ export default function VerifyPage() {
                         onChange={(e) => handleOtpChange(i, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(i, e)}
                         onPaste={handleOtpPaste}
+                        aria-label={`Passcode digit ${i + 1}`}
                         inputMode="numeric"
+                        autoComplete={i === 0 ? 'one-time-code' : 'off'}
                         maxLength={1}
-                        className="h-13 w-11 sm:h-14 sm:w-13 text-center font-mono text-xl font-bold rounded-2xl border border-slate-300 bg-white text-slate-900 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                        className="h-12 w-10 min-w-0 max-w-12 flex-1 text-center font-mono text-xl font-bold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 sm:h-14 sm:max-w-14 sm:rounded-2xl"
                       />
                     ))}
                   </div>
