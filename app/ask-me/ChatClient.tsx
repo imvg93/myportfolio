@@ -377,7 +377,7 @@ export default function ChatClient() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                Ask about my love life, studies, struggles & code
+                Ask about my life, studies, struggles & code
               </p>
             </div>
           </div>
@@ -448,7 +448,7 @@ export default function ChatClient() {
               </h1>
 
               <p className="mt-3 max-w-xl text-sm sm:text-base text-slate-600 leading-relaxed">
-                This is an honest, personal space. You can ask me about my <strong>love life</strong>, the{' '}
+                This is an honest, personal space. You can ask me about my <strong>life</strong>, the{' '}
                 <strong>darkest struggles I fought through</strong>, my <strong>college & studies journey</strong>, or what
                 drives me to engineer high-scale AI systems at 3 AM.
               </p>
