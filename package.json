@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1152.0",
     "@huggingface/inference": "^4.13.1",
     "@nestjs/common": "^11.1.8",
     "@nestjs/core": "^11.1.8",
