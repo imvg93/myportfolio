@@ -6,6 +6,9 @@ import { MobileNotice } from '../src/components/ui/mobile-notice';
 export const metadata: Metadata = {
   title: 'Portfolio - Gireesh Veeranki',
   description: 'My Journey With One Touch',
+  icons: {
+    icon: '/icon.svg?v=2',
+  },
 };
 
 export default function RootLayout({

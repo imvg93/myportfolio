@@ -10,18 +10,14 @@ import {
   Sparkles,
   Copy,
   Check,
-  RotateCcw,
-  Heart,
+  Ellipsis,
+  LogOut,
+  UserRound,
+  MessageSquarePlus,
   GraduationCap,
   Flame,
-  Zap,
-  Send,
-  MessageCircle,
-  HelpCircle,
-  ShieldCheck,
-  Brain,
-  Smile,
-  Compass,
+  Code2,
+  Heart,
 } from 'lucide-react';
 
 type Message = {
@@ -32,83 +28,81 @@ type Message = {
   modelUsed?: string;
 };
 
-// 4 Deep-Dive Conversation Pillars (Love Life, Studies, Struggles, Ambition)
-const CONVERSATION_PILLARS = [
+function createMessageId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+const STARTER_PROMPTS = [
   {
-    category: 'Love Life & Heart',
-    icon: Heart,
-    color: 'text-rose-500',
-    iconBg: 'bg-rose-50 border-rose-200 text-rose-600',
-    borderHover: 'hover:border-rose-400/60 hover:shadow-rose-500/10',
-    cardBg: 'bg-gradient-to-br from-rose-50/50 via-white to-pink-50/30',
-    badge: 'Raw & Honest',
-    prompts: [
-      {
-        title: 'Perspective on Love & Relationships',
-        query: 'What is your perspective on love, dating, and relationships? Have you ever had your heart broken, and what did you learn from it?',
-      },
-      {
-        title: 'What attracts you in a partner?',
-        query: 'What kind of emotional connection and personality traits truly inspire and matter to you in life and love?',
-      },
-    ],
-  },
-  {
-    category: 'Studies & College Days',
+    category: 'College & learning',
+    question: 'What was college like for you?',
+    prompt: 'What was your college journey like, and how did you get started with coding?',
     icon: GraduationCap,
-    color: 'text-blue-500',
-    iconBg: 'bg-blue-50 border-blue-200 text-blue-600',
-    borderHover: 'hover:border-blue-400/60 hover:shadow-blue-500/10',
-    cardBg: 'bg-gradient-to-br from-blue-50/50 via-white to-cyan-50/30',
-    badge: 'Academics & Journey',
-    prompts: [
-      {
-        title: 'College life & learning to code',
-        query: 'How was your college journey? Was learning computer science easy or difficult for you at the beginning?',
-      },
-      {
-        title: 'Self-study vs University',
-        query: 'How did you balance academic studies with self-taught engineering, AI projects, and practical skills?',
-      },
-    ],
+    accent: 'border-blue-300/20 bg-blue-400/10 text-blue-200',
   },
   {
-    category: 'Struggles, Doubts & Grit',
+    category: 'Challenges & growth',
+    question: 'What challenges shaped you?',
+    prompt: 'What challenges shaped you the most, and how did you work through them?',
     icon: Flame,
-    color: 'text-amber-500',
-    iconBg: 'bg-amber-50 border-amber-200 text-amber-600',
-    borderHover: 'hover:border-amber-400/60 hover:shadow-amber-500/10',
-    cardBg: 'bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30',
-    badge: 'Real Struggles',
-    prompts: [
-      {
-        title: 'The hardest phase in your life',
-        query: 'What was the toughest personal or career struggle you went through, and how did you overcome the self-doubt?',
-      },
-      {
-        title: 'Dealing with failure and burnout',
-        query: 'Have you ever felt lost, burnt out, or like an imposter? What is your mental toolkit to bounce back?',
-      },
-    ],
+    accent: 'border-amber-300/20 bg-amber-400/10 text-amber-200',
   },
   {
-    category: 'Ambitions, Dreams & Code',
-    icon: Zap,
-    color: 'text-indigo-500',
-    iconBg: 'bg-indigo-50 border-indigo-200 text-indigo-600',
-    borderHover: 'hover:border-indigo-400/60 hover:shadow-indigo-500/10',
-    cardBg: 'bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/30',
-    badge: 'Vision & Tech',
-    prompts: [
-      {
-        title: 'What keeps you coding at 3 AM?',
-        query: 'What is your core drive? What are your biggest dreams and goals for the next 5 years in engineering and life?',
-      },
-      {
-        title: 'Tech stack & engineering philosophy',
-        query: 'What are your favorite tech stacks (Next.js, FastAPI, AI RAG) and how do you approach building robust software?',
-      },
-    ],
+    category: 'Goals & creativity',
+    question: 'What are you building now?',
+    prompt: 'What are you building now, and what are you excited to create next?',
+    icon: Code2,
+    accent: 'border-cyan-300/20 bg-cyan-400/10 text-cyan-200',
+  },
+  {
+    category: 'Love & connection',
+    question: 'What matters in a relationship?',
+    prompt: 'What do you value most in a relationship and emotional connection?',
+    icon: Heart,
+    accent: 'border-rose-300/20 bg-rose-400/10 text-rose-200',
+  },
+];
+
+const FOLLOW_UP_PROMPTS = [
+  ...STARTER_PROMPTS,
+  {
+    category: 'Personal life',
+    question: 'What do you enjoy outside work?',
+    prompt: 'What do you enjoy doing outside of work and coding?',
+  },
+  {
+    category: 'Growing up',
+    question: 'What were you like growing up?',
+    prompt: 'What were you like growing up, and what experiences shaped you?',
+  },
+  {
+    category: 'Studies',
+    question: 'Which subject did you enjoy most?',
+    prompt: 'Which subjects or college projects did you enjoy most, and why?',
+  },
+  {
+    category: 'Career',
+    question: 'How did you get your start in tech?',
+    prompt: 'How did you get your start in tech, and what was your first role like?',
+  },
+  {
+    category: 'Daily life',
+    question: 'What does a typical day look like?',
+    prompt: 'What does a typical day look like for you these days?',
+  },
+  {
+    category: 'Personal values',
+    question: 'What values matter most to you?',
+    prompt: 'What personal values matter most to you, and how do they guide your choices?',
+  },
+  {
+    category: 'Future plans',
+    question: 'What are you hoping to do next?',
+    prompt: 'What are you hoping to learn, build, or achieve next?',
   },
 ];
 
@@ -125,7 +119,7 @@ function FormattedContent({ content }: { content: string }) {
   const parts = content.split(/(```[\s\S]*?```)/g);
 
   return (
-    <div className="space-y-3 leading-relaxed text-[15px] sm:text-base font-sans text-slate-800">
+    <div className="space-y-1.5 text-[13px] leading-[1.45] sm:space-y-3 sm:text-base sm:leading-relaxed font-sans text-slate-100">
       {parts.map((part, idx) => {
         if (part.startsWith('```') && part.endsWith('```')) {
           const lines = part.slice(3, -3).trim().split('\n');
@@ -135,9 +129,9 @@ function FormattedContent({ content }: { content: string }) {
           return (
             <div
               key={idx}
-              className="my-3 overflow-hidden rounded-2xl border border-slate-800 bg-[#0c1220] text-slate-100 shadow-lg"
+              className="my-2 overflow-hidden rounded-xl border border-slate-800 bg-[#0c1220] text-slate-100 shadow-lg sm:my-3 sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-4 py-2 text-xs text-slate-400">
+              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-3 py-1.5 text-xs text-slate-400 sm:px-4 sm:py-2">
                 <span className="font-mono tracking-wider uppercase text-cyan-400 font-semibold">
                   {language || 'code'}
                 </span>
@@ -158,7 +152,7 @@ function FormattedContent({ content }: { content: string }) {
                   )}
                 </button>
               </div>
-              <pre className="overflow-x-auto p-4 font-mono text-xs sm:text-sm text-cyan-200 no-scrollbar">
+              <pre className="overflow-x-auto p-3 font-mono text-xs sm:p-4 sm:text-sm text-cyan-200 no-scrollbar">
                 <code>{codeBody}</code>
               </pre>
             </div>
@@ -167,7 +161,7 @@ function FormattedContent({ content }: { content: string }) {
 
         const paragraphs = part.split(/\n\n+/);
         return (
-          <div key={idx} className="space-y-2.5">
+          <div key={idx} className="space-y-1 sm:space-y-2.5">
             {paragraphs.map((p, pIdx) => {
               const trimmed = p.trim();
               if (!trimmed) return null;
@@ -179,10 +173,10 @@ function FormattedContent({ content }: { content: string }) {
                   .filter(Boolean);
 
                 return (
-                  <ul key={pIdx} className="space-y-2 my-2 pl-1">
+                  <ul key={pIdx} className="my-1 space-y-1 pl-1 sm:my-2 sm:space-y-2">
                     {listItems.map((item, lIdx) => (
-                      <li key={lIdx} className="flex items-start gap-2.5">
-                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-cyan-600 shrink-0 shadow-sm" />
+                      <li key={lIdx} className="flex items-start gap-1.5 sm:gap-2.5">
+                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-600 shrink-0 shadow-sm sm:mt-2" />
                         <span dangerouslySetInnerHTML={{ __html: renderInlineFormatting(item) }} />
                       </li>
                     ))}
@@ -193,7 +187,7 @@ function FormattedContent({ content }: { content: string }) {
               return (
                 <p
                   key={pIdx}
-                  className="leading-relaxed"
+                  className="leading-[1.45] sm:leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderInlineFormatting(trimmed) }}
                 />
               );
@@ -207,8 +201,8 @@ function FormattedContent({ content }: { content: string }) {
 
 function renderInlineFormatting(text: string): string {
   return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-950">$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded-md bg-slate-100 text-cyan-700 font-mono text-xs sm:text-sm border border-slate-200/80 font-medium">$1</code>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded-md bg-slate-800 text-cyan-200 font-mono text-xs sm:text-sm border border-slate-700 font-medium">$1</code>')
     .replace(/\n/g, '<br/>');
 }
 
@@ -219,14 +213,114 @@ export default function ChatClient() {
   const [email, setEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [askedSuggestionCategories, setAskedSuggestionCategories] = useState<string[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const listEndRef = useRef<HTMLDivElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const shouldAutoScrollRef = useRef(true);
 
-  // Scroll to bottom smoothly
   useEffect(() => {
-    listEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!menuOpen) return;
+
+    const closeMenuOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const closeMenuOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeMenuOutside);
+    document.addEventListener('keydown', closeMenuOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeMenuOutside);
+      document.removeEventListener('keydown', closeMenuOnEscape);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousStyles = {
+      htmlBackground: html.style.backgroundColor,
+      bodyBackground: body.style.backgroundColor,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+      bodyOverscroll: body.style.overscrollBehavior,
+    };
+
+    html.style.backgroundColor = '#030712';
+    body.style.backgroundColor = '#030712';
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    body.style.overscrollBehavior = 'none';
+
+    return () => {
+      html.style.backgroundColor = previousStyles.htmlBackground;
+      body.style.backgroundColor = previousStyles.bodyBackground;
+      html.style.overflow = previousStyles.htmlOverflow;
+      body.style.overflow = previousStyles.bodyOverflow;
+      html.style.overscrollBehavior = previousStyles.htmlOverscroll;
+      body.style.overscrollBehavior = previousStyles.bodyOverscroll;
+    };
+  }, []);
+
+  // Keep the chat app inside the visible mobile viewport while the software
+  // keyboard is open. The message feed can then scroll without moving the composer.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const root = document.documentElement;
+
+    const syncVisibleViewport = () => {
+      if (!viewport) return;
+
+      const keyboardIsOpen = window.innerHeight - viewport.height > 120;
+      root.style.setProperty('--askme-viewport-height', `${viewport.height}px`);
+      root.style.setProperty(
+        '--askme-viewport-top',
+        `${keyboardIsOpen ? viewport.offsetTop : 0}px`,
+      );
+      root.style.setProperty(
+        '--askme-footer-safe-bottom',
+        keyboardIsOpen ? '0px' : 'env(safe-area-inset-bottom)',
+      );
+    };
+
+    syncVisibleViewport();
+    viewport?.addEventListener('resize', syncVisibleViewport);
+    viewport?.addEventListener('scroll', syncVisibleViewport);
+    window.addEventListener('resize', syncVisibleViewport);
+
+    return () => {
+      viewport?.removeEventListener('resize', syncVisibleViewport);
+      viewport?.removeEventListener('scroll', syncVisibleViewport);
+      window.removeEventListener('resize', syncVisibleViewport);
+      root.style.removeProperty('--askme-viewport-height');
+      root.style.removeProperty('--askme-viewport-top');
+      root.style.removeProperty('--askme-footer-safe-bottom');
+    };
+  }, []);
+
+  const handleFeedScroll = () => {
+    const el = feedRef.current;
+    if (!el) return;
+
+    const distanceToBottom = el.scrollHeight - (el.scrollTop + el.clientHeight);
+    shouldAutoScrollRef.current = distanceToBottom < 120;
+  };
+
+  // Scroll to bottom smoothly only when the user is already near the latest message
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (!shouldAutoScrollRef.current) return;
+    const feed = feedRef.current;
+    feed?.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
 
   // Auth check
@@ -251,7 +345,8 @@ export default function ChatClient() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+      const maxInputHeight = window.innerWidth < 640 ? 96 : 160;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, maxInputHeight)}px`;
     }
   }, [input]);
 
@@ -259,8 +354,19 @@ export default function ChatClient() {
     const text = (textToSend ?? input).trim();
     if (!text || loading) return;
 
+    const normalize = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
+    const normalizedText = normalize(text);
+    const askedSuggestion = FOLLOW_UP_PROMPTS.find((suggestion) =>
+      [suggestion.question, suggestion.prompt].some((question) => normalize(question) === normalizedText),
+    );
+    if (askedSuggestion) {
+      setAskedSuggestionCategories((previous) =>
+        previous.includes(askedSuggestion.category) ? previous : [...previous, askedSuggestion.category],
+      );
+    }
+
     const userMsg: Message = {
-      id: crypto.randomUUID(),
+      id: createMessageId(),
       role: 'user',
       content: text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -270,6 +376,11 @@ export default function ChatClient() {
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
+      // Keep mobile Safari/Chrome's keyboard open after the send tap or Enter.
+      // Starter prompt buttons pass textToSend and should not open the keyboard.
+      if (textToSend === undefined) {
+        textareaRef.current.focus({ preventScroll: true });
+      }
     }
     setLoading(true);
 
@@ -284,7 +395,7 @@ export default function ChatClient() {
 
       const json = await res.json();
       const assistantMsg: Message = {
-        id: crypto.randomUUID(),
+        id: createMessageId(),
         role: 'assistant',
         content: json.reply || 'I am right here with you. Feel free to ask me anything about my journey!',
         modelUsed: json.model_used || 'GPT-4o RAG',
@@ -296,7 +407,7 @@ export default function ChatClient() {
       setMessages((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: createMessageId(),
           role: 'assistant',
           content: 'Hey, I hit a brief connection hiccup retrieving my memory. Please ask again in just a moment!',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -316,6 +427,16 @@ export default function ChatClient() {
   const handleClearChat = () => {
     setMessages([]);
     setInput('');
+    setAskedSuggestionCategories([]);
+    setMenuOpen(false);
+    shouldAutoScrollRef.current = true;
+    feedRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  };
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await fetch('/api/logout', { method: 'POST' }).catch(() => undefined);
+    router.replace('/verify');
   };
 
   const displayName = useMemo(() => {
@@ -326,165 +447,169 @@ export default function ChatClient() {
   }, [userName, email]);
 
   return (
-    <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] font-sans text-slate-800">
-      {/* LUMINOUS BRIGHT AURA BACKGROUND LIGHTING */}
-      <div className="pointer-events-none absolute -top-32 left-1/4 -z-10 h-[520px] w-[520px] rounded-full bg-blue-300/35 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/4 -right-24 -z-10 h-[480px] w-[480px] rounded-full bg-cyan-200/40 blur-[130px]" />
-      <div className="pointer-events-none absolute -bottom-24 left-1/3 -z-10 h-[450px] w-[450px] rounded-full bg-indigo-200/30 blur-[130px]" />
-
-      {/* DELICATE GEOMETRIC DOT TEXTURE */}
+    <div
+      className="font-plus-jakarta fixed left-0 right-0 top-0 z-0 flex h-[100dvh] w-full flex-col overflow-hidden overscroll-none bg-[#030712] font-sans text-slate-100"
+      style={{
+        height: 'var(--askme-viewport-height, 100dvh)',
+        top: 'var(--askme-viewport-top, 0px)',
+      }}
+    >
+      {/* Bright, full-page neural mind backdrop */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-30"
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 z-0 ${messages.length === 0 ? 'block' : 'hidden sm:block'}`}
         style={{
-          backgroundImage: `radial-gradient(rgba(14, 116, 144, 0.18) 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
+          backgroundImage:
+            "linear-gradient(rgba(3,7,18,0.3), rgba(3,7,18,0.48)), url('/gireesh-brain-cutout.png')",
+          backgroundSize: 'cover, clamp(200px, 55vw, 360px) auto',
+          backgroundPosition: 'center, center 35%',
+          backgroundRepeat: 'no-repeat',
         }}
       />
 
       {/* 1. TOP HEADER (BRIGHT, CRISP, FROSTED GLASS) */}
-      <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-slate-200/70 bg-white/75 px-4 backdrop-blur-2xl sm:px-6 shadow-sm">
-        <div className="flex items-center gap-3">
+      <header className="relative z-30 flex min-h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/80 px-2 pb-1 pt-[calc(env(safe-area-inset-top)+0.25rem)] backdrop-blur-2xl shadow-lg shadow-black/20 sm:h-16 sm:px-6 sm:py-0">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <button
             onClick={() => router.back()}
-            className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 transition-all hover:border-blue-400 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+            className="group hidden shrink-0 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs font-medium text-slate-200 shadow-sm transition-all hover:border-blue-400 hover:bg-slate-800 hover:text-white sm:flex sm:px-3 sm:text-sm"
           >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 text-slate-600" />
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 text-slate-300" />
             <span className="hidden sm:inline">Portfolio</span>
           </button>
 
           {/* Gireesh Brain Persona Badge */}
-          <div className="flex items-center gap-3 pl-1 sm:pl-2">
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-white p-0.5 shadow-md shadow-cyan-500/20">
+          <div className="flex min-w-0 items-center gap-1.5 pl-1 sm:gap-3 sm:pl-2">
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-slate-900 p-0.5 shadow-md shadow-cyan-500/20 sm:h-10 sm:w-10">
               <Image
-                src="/gireesh-brain.jpg"
+                src="/gireesh-brain-cutout.png"
                 alt="Gireesh Neural Mind"
                 width={40}
                 height={40}
                 className="h-full w-full object-cover rounded-full"
                 priority
               />
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-sans font-bold tracking-tight text-slate-900 text-sm sm:text-base">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="font-sans text-sm font-bold leading-tight tracking-tight text-white sm:hidden">Gireesh</span>
+                <span className="hidden whitespace-nowrap font-sans text-base font-bold leading-tight tracking-tight text-white sm:inline">
                   Gireesh’s Digital Mind
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-100 border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-950/70 border border-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Online • Open Book
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="hidden text-[11px] text-slate-400 sm:block">
                 Ask about my life, studies, struggles & code
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {messages.length > 0 && (
-            <button
-              onClick={handleClearChat}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 shadow-sm"
-              title="Start a fresh conversation"
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
-              <span className="hidden sm:inline">New Chat</span>
-            </button>
-          )}
+        <div ref={menuRef} className="relative flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <span className="hidden max-w-[160px] truncate text-xs font-medium text-slate-300 sm:inline">
+            {displayName}
+          </span>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Open chat options"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          >
+            <Ellipsis className="h-5 w-5" />
+          </button>
 
-          {/* User Badge */}
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white shadow-sm">
-              {displayName.charAt(0)}
+          {menuOpen && (
+            <div
+              role="menu"
+              aria-label="Chat options"
+              className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-xl shadow-black/40"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleClearChat}
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
+              >
+                <MessageSquarePlus className="h-4 w-4 text-slate-400" />
+                New chat
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push('/');
+                }}
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
+              >
+                <UserRound className="h-4 w-4 text-slate-400" />
+                My profile
+              </button>
+              <div className="my-1 border-t border-slate-800" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-rose-300 transition hover:bg-rose-950/50 hover:text-rose-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </button>
             </div>
-            <span className="max-w-[100px] truncate text-xs font-medium text-slate-700 sm:max-w-[160px]">
-              {displayName}
-            </span>
-          </div>
+          )}
         </div>
       </header>
 
       {/* 2. CHAT STREAM / FEED */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-12 no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="mx-auto max-w-3xl space-y-6">
-          {/* WELCOME HERO / CONVERSATION INTRO */}
+      <div
+        ref={feedRef}
+        onScroll={handleFeedScroll}
+        className="relative z-10 min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-2 pt-2 pb-2 sm:px-6 sm:pt-8 sm:pb-12 no-scrollbar"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col space-y-2 sm:space-y-6">
+          {/* Minimal empty state keeps the page focused on conversation */}
           {messages.length === 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center pt-4 sm:pt-8 pb-8 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-1 flex-col px-1 pb-4 pt-5 text-center sm:px-3 sm:pb-8 sm:pt-10"
             >
-              {/* Glowing Neural Brain Showcase (Clear of top boundary) */}
-              <div className="relative mb-6 mt-1 flex items-center justify-center shrink-0">
-                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-400 to-indigo-300 opacity-40 blur-xl animate-pulse" />
-                <div className="relative h-24 w-24 sm:h-28 sm:w-28 overflow-hidden rounded-full border-4 border-white bg-white p-1 shadow-2xl shadow-cyan-500/25">
-                  <Image
-                    src="/gireesh-brain.jpg"
-                    alt="Gireesh Neural Brain"
-                    width={112}
-                    height={112}
-                    className="h-full w-full object-cover rounded-full"
-                    priority
-                  />
-                </div>
-              </div>
-
-              {/* Status Pill */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                <span>Zero filters • Talk to me like a real person</span>
-              </div>
-
-              <h1 className="mt-4 font-sans text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-                Hey {displayName}, I’m{' '}
-                <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-indigo-600 bg-clip-text text-transparent">
-                  Gireesh’s Mind
-                </span>
-                .
+              <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                Hi {displayName}, welcome!
               </h1>
-
-              <p className="mt-3 max-w-xl text-sm sm:text-base text-slate-600 leading-relaxed">
-                This is an honest, personal space. You can ask me about my <strong>life</strong>, the{' '}
-                <strong>darkest struggles I fought through</strong>, my <strong>college & studies journey</strong>, or what
-                drives me to engineer high-scale AI systems at 3 AM.
+              <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
+                Ask me anything, or choose a question below.
               </p>
+              <div className="mx-auto mt-auto grid w-full max-w-xl grid-cols-1 gap-2.5 pt-16 min-[360px]:grid-cols-2 sm:mt-5 sm:gap-3 sm:pt-0">
+                {STARTER_PROMPTS.map((suggestion) => {
+                  const SuggestionIcon = suggestion.icon;
 
-              {/* 4 CONVERSATION PILLARS (LOVE, STUDIES, STRUGGLES, AMBITION) */}
-              <div className="mt-8 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 text-left">
-                {CONVERSATION_PILLARS.map((topic, tIdx) => {
-                  const TopicIcon = topic.icon;
                   return (
-                    <div
-                      key={tIdx}
-                      className={`relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 ${topic.cardBg} p-4 sm:p-5 backdrop-blur-md transition-all duration-300 ${topic.borderHover} shadow-sm hover:shadow-md`}
+                    <button
+                      key={suggestion.category}
+                      onClick={() => handleSend(suggestion.prompt)}
+                      className="group flex min-h-[92px] items-start gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:p-3.5"
                     >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${topic.iconBg}`}>
-                            <TopicIcon className="h-3.5 w-3.5" />
-                            {topic.category}
-                          </span>
-                          <span className="text-[11px] font-medium text-slate-400">{topic.badge}</span>
-                        </div>
-
-                        <div className="mt-3.5 space-y-2">
-                          {topic.prompts.map((p, pIdx) => (
-                            <button
-                              key={pIdx}
-                              onClick={() => handleSend(p.query)}
-                              className="group flex w-full items-center justify-between rounded-xl border border-slate-200/80 bg-white/80 px-3.5 py-2.5 text-left text-xs sm:text-sm text-slate-700 transition-all hover:border-blue-400 hover:bg-white hover:text-slate-950 hover:shadow-sm"
-                            >
-                              <span className="font-medium pr-2">{p.title}</span>
-                              <Send className="h-3 w-3 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600" />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${suggestion.accent}`}>
+                        <SuggestionIcon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
+                          {suggestion.category}
+                        </span>
+                        <span className="mt-1 block text-xs font-medium leading-snug text-slate-100 sm:text-sm">
+                          {suggestion.question}
+                        </span>
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -496,19 +621,19 @@ export default function ChatClient() {
             {messages.map((m) => (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className={`flex w-full gap-3 sm:gap-4 ${
+                className={`flex w-full gap-1 sm:gap-4 ${
                   m.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {/* Assistant Brain Avatar */}
                 {m.role === 'assistant' && (
-                  <div className="relative h-9 w-9 sm:h-10 sm:w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-white p-0.5 shadow-md shadow-cyan-500/15">
+                  <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-slate-950 p-0.5 shadow-md shadow-cyan-500/15 sm:block">
                     <Image
-                      src="/gireesh-brain.jpg"
+                      src="/gireesh-brain-cutout.png"
                       alt="Gireesh Mind"
                       width={40}
                       height={40}
@@ -519,25 +644,25 @@ export default function ChatClient() {
 
                 {/* Message Bubble Card */}
                 <div
-                  className={`relative max-w-[88%] sm:max-w-[80%] rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 shadow-sm ${
+                  className={`relative max-w-[86%] rounded-2xl shadow-sm sm:max-w-[80%] ${
                     m.role === 'user'
-                      ? 'rounded-tr-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-blue-500/20'
-                      : 'rounded-tl-sm border border-slate-200/90 bg-white text-slate-800 backdrop-blur-xl shadow-md'
+                      ? 'px-2.5 py-1.5 sm:px-5 sm:py-3.5 rounded-tr-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-blue-500/20'
+                      : 'w-full px-0 py-0 text-slate-100 sm:w-auto sm:px-5 sm:py-3.5 rounded-tl-sm border-0 bg-transparent shadow-none sm:border sm:border-slate-700/90 sm:bg-slate-950/90 sm:backdrop-blur-xl sm:shadow-lg sm:shadow-black/25'
                   }`}
                 >
                   {/* Header Tag for Assistant */}
                   {m.role === 'assistant' && (
-                    <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5 text-[11px] text-slate-400">
-                      <div className="flex items-center gap-1.5 font-semibold text-blue-600">
-                        <Sparkles className="h-3.5 w-3.5 text-cyan-600" />
+                    <div className="mb-0 hidden items-center justify-between border-b-0 pb-0 text-[10px] text-slate-400 sm:mb-2 sm:flex sm:border-b sm:border-slate-800 sm:pb-1.5 sm:text-[11px]">
+                      <div className="flex items-center gap-1.5 font-semibold text-blue-300">
+                        <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
                         <span>Gireesh</span>
                       </div>
-                      {m.timestamp && <span>{m.timestamp}</span>}
+                      {m.timestamp && <span className="hidden sm:inline">{m.timestamp}</span>}
                     </div>
                   )}
 
                   {m.role === 'user' ? (
-                    <p className="whitespace-pre-wrap text-[15px] sm:text-base leading-relaxed">
+                    <p className="whitespace-pre-wrap text-[13px] leading-[1.45] sm:text-base sm:leading-relaxed">
                       {m.content}
                     </p>
                   ) : (
@@ -546,13 +671,13 @@ export default function ChatClient() {
 
                   {/* Assistant Message Actions */}
                   {m.role === 'assistant' && (
-                    <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 text-xs">
-                      <span className="text-[10px] text-slate-400">
+                    <div className="mt-0 flex items-center justify-end border-t-0 pt-0 text-xs sm:mt-3 sm:justify-between sm:border-t sm:border-slate-800 sm:pt-2">
+                      <span className="hidden text-[10px] text-slate-400 sm:inline">
                         Authentic response • {m.modelUsed || 'GPT-4o RAG'}
                       </span>
                       <button
                         onClick={() => copyMessage(m.content, m.id)}
-                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+                        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 hover:text-white transition sm:px-2.5"
                         title="Copy answer"
                       >
                         {copiedId === m.id ? (
@@ -563,7 +688,7 @@ export default function ChatClient() {
                         ) : (
                           <>
                             <Copy className="h-3.5 w-3.5" />
-                            <span>Copy answer</span>
+                            <span className="hidden sm:inline">Copy answer</span>
                           </>
                         )}
                       </button>
@@ -573,7 +698,7 @@ export default function ChatClient() {
 
                 {/* User Avatar */}
                 {m.role === 'user' && (
-                  <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white shadow-md">
+                  <div className="hidden h-9 w-9 shrink-0 select-none items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white shadow-md sm:flex">
                     {displayName.charAt(0)}
                   </div>
                 )}
@@ -584,75 +709,65 @@ export default function ChatClient() {
           {/* REAL-TIME HUMANIZED TYPING INDICATOR */}
           {loading && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-3 sm:gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-start gap-2 sm:gap-4"
             >
-              <div className="relative h-9 w-9 sm:h-10 sm:w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-white p-0.5 animate-pulse shadow-md">
+              <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-slate-900 p-0.5 animate-pulse shadow-md sm:block">
                 <Image
-                  src="/gireesh-brain.jpg"
+                  src="/gireesh-brain-cutout.png"
                   alt="Gireesh Mind"
                   width={40}
                   height={40}
                   className="h-full w-full object-cover rounded-full"
                 />
               </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-md">
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 shadow-md">
                 <div className="flex gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
                   <span className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce [animation-delay:-0.15s]" />
                   <span className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce" />
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-slate-600">
+                <span className="text-xs sm:text-sm font-medium text-slate-300">
                   Gireesh is reflecting & writing back...
                 </span>
               </div>
             </motion.div>
           )}
 
-          <div ref={listEndRef} />
         </div>
       </div>
 
       {/* 3. BOTTOM FLOATING PROMPT CAPSULE */}
-      <footer className="sticky bottom-0 z-30 w-full border-t border-slate-200/80 bg-white/85 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-2xl sm:px-6 shadow-[0_-8px_30px_rgba(0,0,0,0.03)]">
+      <footer
+        className="relative z-30 w-full shrink-0 border-t border-slate-800/80 bg-slate-950/85 px-2 pt-1.5 backdrop-blur-2xl sm:px-6 sm:pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]"
+        style={{
+          paddingBottom: 'calc(var(--askme-footer-safe-bottom, env(safe-area-inset-bottom)) + 6px)',
+        }}
+      >
         <div className="mx-auto max-w-3xl">
-          {/* Quick Idea Chips */}
           {messages.length > 0 && !loading && (
-            <div className="mb-2 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-              <span className="text-slate-400 shrink-0 text-[11px]">Explore deeper:</span>
-              <button
-                onClick={() => handleSend('Tell me honestly about your love life and relationships.')}
-                className="shrink-0 rounded-full border border-rose-200 bg-rose-50/70 px-3 py-1 text-rose-700 hover:border-rose-400 hover:bg-rose-100 transition"
-              >
-                💖 Love Life & Heart
-              </button>
-              <button
-                onClick={() => handleSend('What were your biggest struggles during studies or college?')}
-                className="shrink-0 rounded-full border border-blue-200 bg-blue-50/70 px-3 py-1 text-blue-700 hover:border-blue-400 hover:bg-blue-100 transition"
-              >
-                🎓 College & Studies
-              </button>
-              <button
-                onClick={() => handleSend('What was the lowest point in your career and how did you overcome it?')}
-                className="shrink-0 rounded-full border border-amber-200 bg-amber-50/70 px-3 py-1 text-amber-700 hover:border-amber-400 hover:bg-amber-100 transition"
-              >
-                🌪️ Toughest Struggles
-              </button>
-              <button
-                onClick={() => handleSend('What are your biggest engineering dreams right now?')}
-                className="shrink-0 rounded-full border border-indigo-200 bg-indigo-50/70 px-3 py-1 text-indigo-700 hover:border-indigo-400 hover:bg-indigo-100 transition"
-              >
-                ⚡ Big Dreams & Code
-              </button>
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar" aria-label="Suggested questions">
+              {FOLLOW_UP_PROMPTS.filter(
+                (suggestion) => !askedSuggestionCategories.includes(suggestion.category),
+              ).map((suggestion) => (
+                <button
+                  key={suggestion.category}
+                  onClick={() => handleSend(suggestion.prompt)}
+                  className="min-h-8 shrink-0 rounded-full border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-cyan-500/60 hover:bg-slate-800 hover:text-white sm:text-xs"
+                >
+                  {suggestion.question}
+                </button>
+              ))}
             </div>
           )}
 
           {/* Input Box */}
-          <div className="relative flex items-end gap-2 rounded-2xl border border-slate-300 bg-white p-2 shadow-lg transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 sm:p-2.5">
+          <div className="relative flex items-end gap-1.5 rounded-2xl border border-slate-700 bg-slate-950/95 p-1.5 shadow-lg shadow-black/30 transition-all focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 sm:gap-2 sm:p-2.5">
             <textarea
               ref={textareaRef}
               rows={1}
+              enterKeyHint="send"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -661,31 +776,25 @@ export default function ChatClient() {
                   handleSend();
                 }
               }}
-              placeholder="Ask Gireesh anything (love life, college days, struggles, dreams, code)..."
-              disabled={loading}
-              className="max-h-36 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2 text-sm sm:text-base text-slate-900 placeholder-slate-400 outline-none disabled:opacity-50 no-scrollbar"
+              placeholder="Ask Gireesh anything"
+              className="max-h-24 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 text-base text-white placeholder-slate-500 outline-none no-scrollbar sm:max-h-36 sm:min-h-[44px] sm:px-3"
             />
 
             <button
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => handleSend()}
               disabled={!input.trim() || loading}
-              className={`flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl font-medium transition-all duration-200 ${
+              className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl font-medium transition-all duration-200 ${
                 input.trim() && !loading
                   ? 'bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:scale-105 active:scale-95'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-70'
               }`}
-              aria-label="Send message to Gireesh"
+              aria-label={loading ? 'Waiting for Gireesh’s reply' : 'Send message to Gireesh'}
             >
               <ArrowUp className="h-5 w-5 stroke-[2.5]" />
             </button>
           </div>
 
-          <div className="mt-2 flex items-center justify-between px-2 text-[11px] text-slate-400">
-            <span>
-              Direct conversation with Gireesh Veeranki • Powered by Pinecone RAG & LLMs
-            </span>
-            <span className="hidden sm:inline">Press ↵ Enter to send</span>
-          </div>
         </div>
       </footer>
     </div>
