@@ -1,0 +1,92 @@
+[
+  {
+    "source_id": "v2_private_family_history",
+    "title": "Confidential Family Background and 2012 Turning Point",
+    "category": "Family & Personal",
+    "year": 2012,
+    "content": "Confidential: Family background details, family members' specifics, parental relationship history, and the passing of Gireesh's father in 2012. This event was a major emotional and developmental turning point that shaped his inner resolve and devotion to supporting his family.",
+    "metadata": {
+      "source_files": [
+        "ai-json.json",
+        "mydata.json"
+      ],
+      "original_ids": [
+        "ai_002",
+        "mydata_family"
+      ],
+      "confidentiality": "STRICTLY_PRIVATE"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "v2_private_emotional_reactions",
+    "title": "Confidential Emotional Reactions and Trigger Responses",
+    "category": "Personal Psychology",
+    "year": null,
+    "content": "Confidential: Psychological reflections regarding anger triggers (reactions when wrongly blamed or misunderstood), grief handling, emotional coping mechanisms, and internal stress management methods.",
+    "metadata": {
+      "source_files": [
+        "gireesh_ai_profile_009.json"
+      ],
+      "original_ids": [
+        "profile009_emotions_and_reactions",
+        "profile009_anger_triggers"
+      ],
+      "confidentiality": "STRICTLY_PRIVATE"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "v2_private_relationships_boundaries",
+    "title": "Confidential Relationship Philosophies and Interpersonal Boundaries",
+    "category": "Personal Psychology",
+    "year": null,
+    "content": "Confidential: Personal criteria for genuine friendships, handling misunderstandings, detachment philosophies, and boundaries regarding interpersonal connections.",
+    "metadata": {
+      "source_files": [
+        "gireesh_ai_profile_009.json"
+      ],
+      "original_ids": [
+        "profile009_relationships_and_connections"
+      ],
+      "confidentiality": "STRICTLY_PRIVATE"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "v2_private_lifestyle_daily_routine",
+    "title": "Confidential Daily Schedule, Sleep, and Health Habits",
+    "category": "Personal Lifestyle",
+    "year": null,
+    "content": "Confidential: Private daily routine, morning and night schedules, sleep patterns, dietary preferences, and personal health approaches.",
+    "metadata": {
+      "source_files": [
+        "gireesh_ai_profile_009.json"
+      ],
+      "original_ids": [
+        "profile009_daily_life_and_habits",
+        "profile009_lifestyle_and_health"
+      ],
+      "confidentiality": "STRICTLY_PRIVATE"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "v2_private_family_financial_vow",
+    "title": "Confidential Personal Mission for Family Support",
+    "category": "Family & Personal",
+    "year": null,
+    "content": "Confidential: Deep personal commitment to ensure his mother and family live peacefully without hardships, and personal motivations tied to family responsibilities.",
+    "metadata": {
+      "source_files": [
+        "gireesh_ai_profile_009.json"
+      ],
+      "original_ids": [
+        "profile009_personal_goals",
+        "profile009_motivation_drivers"
+      ],
+      "confidentiality": "STRICTLY_PRIVATE"
+    },
+    "visibility": "private"
+  }
+]

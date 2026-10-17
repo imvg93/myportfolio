@@ -193,3 +193,31 @@ No RLS is required when using the Service Role key on server routes. If you enab
 - `/api/chat` – sends messages to OpenAI with Gireesh persona system prompt
 
 Clicking "Insight AI" in the dock navigates to `/ask-me`.
+
+---
+
+## 🐍 Python AI Engine (Insight AI Backend)
+
+The core AI intelligence, RAG vector retrieval, and LLM orchestration are built with **Python 3** and **FastAPI** located in [`backend/`](file:///Users/chanti/coding-files/myportfolio/backend):
+
+- **Framework**: FastAPI with asynchronous I/O and automatic Swagger UI at `http://localhost:8000/docs`
+- **Vector Database (RAG)**: Pinecone with 384-dimensional sentence embeddings (`all-MiniLM-L6-v2`) via Hugging Face
+- **LLM Multi-Provider Fallback**: OpenAI (GPT-4o / GPT-4o-mini) and Hugging Face Inference
+- **Data Ingestion**: Python script in [`backend/scripts/upload_to_pinecone.py`](file:///Users/chanti/coding-files/myportfolio/backend/scripts/upload_to_pinecone.py)
+- **Containerization**: [`backend/Dockerfile`](file:///Users/chanti/coding-files/myportfolio/backend/Dockerfile) included for easy production deployment
+
+### Running the Python AI Backend:
+
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Or from the root directory using npm:
+```bash
+npm run dev:backend   # Starts the Python FastAPI backend
+npm run dev:all       # Runs both Next.js and Python backend concurrently
+```

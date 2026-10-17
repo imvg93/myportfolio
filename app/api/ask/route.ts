@@ -119,6 +119,23 @@ export async function POST(req: Request) {
 		const body = await req.json();
 		const { question } = BodySchema.parse(body);
 
+		// 1. Delegate to Python FastAPI AI backend if running
+		const pythonAiUrl = process.env.PYTHON_AI_URL || 'http://127.0.0.1:8000';
+		try {
+			const pyRes = await fetch(`${pythonAiUrl}/api/ask`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ question }),
+				signal: AbortSignal.timeout(20000),
+			});
+			if (pyRes.ok) {
+				const pyData = await pyRes.json();
+				return NextResponse.json(pyData);
+			}
+		} catch (_) {
+			// Python service offline or timed out; proceed to Next.js handler
+		}
+
 		const pineconeApiKey = requireEnv('PINECONE_API_KEY');
 		const pineconeEnv = requireEnv('PINECONE_ENVIRONMENT');
 		const pineconeIndexName = requireEnv('PINECONE_INDEX_NAME');
@@ -137,7 +154,7 @@ export async function POST(req: Request) {
 			vector,
 			topK: 5,
 			includeMetadata: true,
-			filter: undefined,
+			filter: { visibility: { $eq: 'public' } },
 		});
 
 		const matches = queryResponse?.matches ?? [];

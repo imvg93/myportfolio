@@ -1,3 +1,7 @@
+/**
+ * @deprecated OBSOLETE - Use `backend/scripts/sync_supabase_to_pinecone.py` instead.
+ * This legacy script relied on SUPABASE_JSON_URL storage blobs.
+ */
 (function () {
 	'use strict';
 

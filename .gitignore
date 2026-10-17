@@ -26,3 +26,13 @@ out/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Python virtual environments
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]

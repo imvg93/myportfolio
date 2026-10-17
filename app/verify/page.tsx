@@ -27,7 +27,7 @@ export default function VerifyPage() {
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to send code');
       setStep('otp');
-      setMessage('Code sent! Check your inbox.');
+      setMessage(json.devOtp ? `Dev Mode: Code is ${json.devOtp}` : 'Code sent! Check your inbox.');
       setResendIn(30);
       setOtp('');
       setOtpDigits(Array(6).fill(''));
@@ -71,7 +71,7 @@ export default function VerifyPage() {
   }, [resendIn]);
 
   const handleOtpChange = (i: number, v: string) => {
-    const digit = v.replace(/\D/g, '').slice(0, 1);
+    const digit = v.replace(/\D/g, '').slice(-1);
     setOtpDigits((d) => {
       const next = [...d];
       next[i] = digit;

@@ -1,0 +1,537 @@
+#!/usr/bin/env python3
+"""
+Generates the Corrected v2 Dataset:
+- Sanitizes public education records (removes father's passing reference).
+- Rewrites Datavalley internship record (removes CEO family connection, highlights technical achievements).
+- Merges micro-chunks into rich, cohesive paragraphs (14 public records).
+- Places professional goals, vision, and work-style reflection into a staged approval queue.
+- Isolates sensitive family history, emotional triggers, relationships, and health into private records.
+
+Guarantees:
+- Reads original files strictly read-only.
+- Outputs exclusively to backend/data/v2_drafts/.
+- Zero database or network calls.
+"""
+
+import json
+from pathlib import Path
+from typing import List, Dict, Any
+
+V2_DIR = Path(__file__).resolve().parent.parent / "data" / "v2_drafts"
+
+
+def build_v2_dataset() -> Dict[str, List[Dict[str, Any]]]:
+    # --------------------------------------------------------------------------
+    # 1. COHESIVE PUBLIC RECORDS (Curated, Rich Paragraphs)
+    # --------------------------------------------------------------------------
+    public_records: List[Dict[str, Any]] = [
+        {
+            "source_id": "v2_early_life",
+            "title": "Early Life, Childhood, and Creative Curiosity",
+            "category": "Personal Background",
+            "year": 1999,
+            "content": (
+                "Veeranki Girish was born in Vijayawada, Andhra Pradesh, India. "
+                "Growing up across Andhra Pradesh and Telangana, he developed a deep sense of adaptability, "
+                "creativity, and intellectual curiosity. Early in life, he dreamed of pursuing medicine, "
+                "which sparked a strong desire to solve difficult challenges and master complex knowledge systems. "
+                "This curiosity ultimately evolved into his passion for software engineering, full-stack development, "
+                "and modern artificial intelligence."
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json", "mydata.json"],
+                "original_ids": ["ai_001", "mydata_personal"],
+                "year_range": "1999–2005",
+                "topic": "early_life"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_education_schooling",
+            "title": "School Education, Academic Interests, and Activities",
+            "category": "Education",
+            "year": 2000,
+            "content": (
+                "Gireesh completed his primary and secondary schooling across Hyderabad and Machilipatnam. "
+                "He attended MNR School in Kukatpally, Hyderabad (1st to 4th grade), Balaji Vidyalayam (5th to 8th grade), "
+                "and Sri Chaitanya Techno School in Machilipatnam (9th to 10th grade). Throughout school, he developed a strong "
+                "affinity for Mathematics and Science, focusing on analytical reasoning and structured problem solving. "
+                "In addition to academics, he actively participated in extracurricular school events, including performing on annual day."
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json", "mydata.json"],
+                "original_ids": ["ai_003", "mydata_education_schooling", "mydata_education_activities"],
+                "year_range": "2000–2015",
+                "topic": "school_education",
+                "sanitization_note": "Removed sensitive personal loss; focused strictly on academic progression."
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_education_college",
+            "title": "Higher Secondary College Education (MPC)",
+            "category": "Education",
+            "year": 2016,
+            "content": (
+                "Gireesh attended Sri Chaitanya Junior College in Machilipatnam, completing his intermediate education "
+                "in the MPC (Mathematics, Physics, Chemistry) group. This intensive scientific and mathematical coursework "
+                "established a solid foundation for computational thinking, algorithmic logic, and engineering fundamentals."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json"],
+                "original_ids": ["mydata_education_college"],
+                "topic": "college_education"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_career_datavalley",
+            "title": "Full-Stack Software Engineering — Datavalley MERN Stack Internship",
+            "category": "Career Experience",
+            "year": 2025,
+            "content": (
+                "In 2025, Gireesh served as a MERN Stack Software Engineering Intern at Datavalley. "
+                "In this role, he engineered full-stack web applications using React on the frontend and Node.js with "
+                "Express and MongoDB on the backend. Through hands-on development and rapid technical adaptation, he mastered "
+                "end-to-end component architecture, RESTful API design, database schemas, and state management. "
+                "He developed a strong track record of consistently delivering production-quality code, resolving complex blockers independently, "
+                "and meeting strict sprint deadlines."
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json", "mydata.json"],
+                "original_ids": ["ai_004", "mydata_career_start"],
+                "year_range": "2025",
+                "topic": "datavalley_internship",
+                "sanitization_note": "Removed mention of family connection with CEO; highlights software engineering role and achievements."
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_skills_technical",
+            "title": "Core Technical Stack and Engineering Capabilities",
+            "category": "Skills and Knowledge",
+            "year": 2025,
+            "content": (
+                "Gireesh specializes in modern full-stack web development and AI systems architecture. "
+                "His core stack includes the MERN stack (MongoDB, Express.js, React, Node.js), Next.js (App Router, Server Components), "
+                "TypeScript, Python, and FastAPI. In the AI/ML domain, he integrates vector databases (Pinecone), vector embeddings "
+                "(Sentence Transformers), and large language models (OpenAI GPT-4o, Hugging Face). For data and backend services, "
+                "he utilizes Supabase (PostgreSQL, Row Level Security, Auth), Tailwind CSS, Framer Motion, and containerization via Docker."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json", "ai-json.json"],
+                "original_ids": ["ai_005", "mydata_skills_and_knowledge"],
+                "year_range": "2024–2025",
+                "topic": "technical_stack"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_skills_learning_method",
+            "title": "Technical Learning Methodology and Continuous Growth",
+            "category": "Skills and Knowledge",
+            "year": 2025,
+            "content": (
+                "Gireesh’s technical approach is execution-driven: he learns by reading technical documentation, studying production codebases, "
+                "and building working prototypes. Rather than relying on passive tutorials, he identifies project requirements, tests implementations, "
+                "and troubleshoots edge cases directly in code. This methodology allows him to adopt new frameworks, language features, and AI paradigms "
+                "with remarkable speed and autonomy."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json"],
+                "original_ids": ["mydata_skills_and_knowledge_learning_method"],
+                "topic": "learning_method"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_project_catwalk_salon",
+            "title": "Commercial Web Application — Catwalk Salon Platform",
+            "category": "Projects and Achievements",
+            "year": 2024,
+            "content": (
+                "Gireesh designed, developed, and deployed the official commercial website for Catwalk Salon (catwalksalon.com). "
+                "The platform features an elegant, mobile-responsive user interface, service catalogs, appointment booking workflows, "
+                "and optimized asset delivery. The project demonstrates his capability to translate real-world client and business requirements "
+                "into a polished, production-ready web presence."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json", "ai-json.json"],
+                "original_ids": ["ai_006", "mydata_achievements_projects_1"],
+                "topic": "catwalk_salon_project"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_project_ai_portfolio",
+            "title": "AI-Powered Portfolio and Conversational Insight Engine",
+            "category": "Projects and Achievements",
+            "year": 2025,
+            "content": (
+                "Gireesh engineered this personal AI portfolio and RAG-powered interactive assistant ('Gireesh Insight'). "
+                "The platform features a modern Next.js frontend with macOS-inspired dock navigation, a dedicated Python FastAPI backend, "
+                "vector retrieval via Pinecone, and multi-model LLM orchestration (OpenAI and Hugging Face). "
+                "It incorporates dual defense-in-depth privacy guards, OTP verification via Supabase, and responsive micro-animations."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json", "ai-json.json"],
+                "original_ids": ["ai_006", "mydata_achievements_major_achievement"],
+                "topic": "ai_portfolio_project"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_project_bill_portal",
+            "title": "Enterprise Portal — Role-Based Payment and Transaction System",
+            "category": "Projects and Achievements",
+            "year": 2024,
+            "content": (
+                "Gireesh engineered a secure web-based billing and transaction management portal featuring distinct access tiers for business owners "
+                "and staff workers. Workers upload daily invoices and expense receipts, while business owners monitor financial transactions, "
+                "view analytics in real time, and audit business operations. The application enforces role-based access control (RBAC), "
+                "secure session management, and responsive data tables."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json", "ProjectsPage.tsx"],
+                "original_ids": ["projects_portal_app"],
+                "topic": "bill_payment_portal"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_achievements_mentoring",
+            "title": "Peer Mentorship, Collaboration, and Code Reviews",
+            "category": "Achievements and Community",
+            "year": 2024,
+            "content": (
+                "Gireesh actively supports fellow developers and junior peers by reviewing code, explaining challenging web development concepts, "
+                "and guiding them through frontend and backend debugging. He is committed to fostering an open, supportive engineering culture "
+                "where practical knowledge sharing drives collective success."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json"],
+                "original_ids": ["mydata_achievements_mentoring"],
+                "topic": "mentoring_and_support"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_mindset_learning_philosophy",
+            "title": "Engineering Mindset, Adaptability, and Resilience",
+            "category": "Mindset and Values",
+            "year": 2025,
+            "content": (
+                "Gireesh values patience, emotional stability, and intellectual adaptability. Having navigated significant life transitions, "
+                "he views obstacles as catalysts for self-development and technical growth. He approaches engineering challenges calmly, "
+                "maintaining that steady determination, focus, and continuous iteration turn complex problems into progress."
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json"],
+                "original_ids": ["ai_007"],
+                "year_range": "2024–2025",
+                "topic": "mindset_and_resilience"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_personal_values_integrity",
+            "title": "Core Values, Consistency, and Professional Dedication",
+            "category": "Mindset and Values",
+            "year": 2025,
+            "content": (
+                "Gireesh’s core philosophy centers on disciplined focus, consistency, and professional integrity. "
+                "He believes that true mastery comes from daily effort, clear priorities, and ownership of one's craft. "
+                "His guiding message is: 'Stay focused on what you are doing, maintain consistency, and you will achieve genuine success.'"
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json", "gireesh_ai_profile_009.json"],
+                "original_ids": ["ai_008", "profile009_core_message"],
+                "year_range": "2020–2025",
+                "topic": "core_values"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_communication_languages",
+            "title": "Communication Skills, Languages, and Professional Demeanor",
+            "category": "Communication",
+            "year": None,
+            "content": (
+                "Gireesh communicates effectively in both English and Telugu. He maintains a polite, calm, and collaborative "
+                "demeanor when interacting with teammates, mentors, and clients, ensuring technical discussions and project requirements "
+                "are translated into clear, actionable outcomes."
+            ),
+            "metadata": {
+                "source_files": ["mydata.json"],
+                "original_ids": ["mydata_personal_languages"],
+                "topic": "languages_and_communication"
+            },
+            "visibility": "public"
+        },
+        {
+            "source_id": "v2_execution_bias_strengths",
+            "title": "Execution Velocity, Problem Solving, and Deep Focus",
+            "category": "Work Style",
+            "year": 2025,
+            "content": (
+                "Gireesh is characterized by a strong execution bias — he prioritizes building functional, working solutions quickly. "
+                "He works effectively as an autonomous problem-solver who dives deeply into documentation to unblock technical challenges. "
+                "Under pressure, he responds with structured analytical thinking rather than panic, systematically isolating issues until they are resolved."
+            ),
+            "metadata": {
+                "source_files": ["gireesh_ai_profile_009.json"],
+                "original_ids": ["profile009_work_style_strengths"],
+                "topic": "execution_velocity"
+            },
+            "visibility": "public"
+        }
+    ]
+
+    # --------------------------------------------------------------------------
+    # 2. PROFESSIONAL REVIEW QUEUE (Staged for Explicit User Approval)
+    # --------------------------------------------------------------------------
+    approval_queue: List[Dict[str, Any]] = [
+        {
+            "source_id": "review_prof_goals_mastery",
+            "title": "Professional Ambition: Comprehensive Full-Stack and AI Mastery",
+            "category": "Vision & Goals",
+            "year": 2025,
+            "content": (
+                "Gireesh’s overarching professional goal is to master every aspect of modern software engineering. "
+                "He strives to build deep competency across frontend, backend, cloud infrastructure, and artificial intelligence, "
+                "with the mindset of never saying 'I don't know' to an engineering challenge. His ambition is to innovate and manage "
+                "high-impact technical initiatives with confidence and technical authority."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "future_goals_and_vision.professional_goals",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"  # Staged as private until approved
+        },
+        {
+            "source_id": "review_prof_five_year_vision",
+            "title": "Five-Year Vision: Technical Leadership and Innovation",
+            "category": "Vision & Goals",
+            "year": 2025,
+            "content": (
+                "Over the next five years, Gireesh envisions himself as a highly accomplished and respected software engineer "
+                "capable of leading major engineering projects, architecting scalable platforms, and mentoring high-performing teams."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "future_goals_and_vision.five_year_vision",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "review_prof_product_mission",
+            "title": "Entrepreneurial Mission: Building Impactful Tech Products",
+            "category": "Vision & Goals",
+            "year": 2025,
+            "content": (
+                "Gireesh aspires to build innovative technology products and explore entrepreneurial ventures that solve real-world problems. "
+                "His mission is to engineer software that delivers tangible value to businesses and inspires the next generation of engineers."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "future_goals_and_vision.life_mission",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "review_work_planning_strategy",
+            "title": "Outcome-Focused Planning and Rapid Execution Strategy",
+            "category": "Work Style",
+            "year": 2025,
+            "content": (
+                "When approaching a project, Gireesh adopts a practical, results-oriented planning strategy. "
+                "Rather than spending excessive cycles drafting theoretical roadmaps, he moves rapidly into implementation, "
+                "validating technical assumptions with working code and delivering functional deliverables as early as possible."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "work_style_and_productivity.planning_strategy",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "review_work_pressure_handling",
+            "title": "Calm, Reflective Approach to Deadlines and Pressure",
+            "category": "Work Style",
+            "year": 2025,
+            "content": (
+                "When faced with tight deadlines or high-stakes technical incidents, Gireesh intentionally slows down to analyze the root cause "
+                "logically. He prioritizes tasks by business impact and executes solutions methodically, avoiding reactive multitasking or panic."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "work_style_and_productivity.deadline_and_pressure_handling",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "review_work_growth_areas",
+            "title": "Professional Self-Awareness and Continuous Improvement",
+            "category": "Work Style",
+            "year": 2025,
+            "content": (
+                "Gireesh maintains high self-awareness regarding his working style. He actively works to balance his rapid solo execution "
+                "with proactive architecture documentation and early team alignment to ensure long-term maintainability on large-scale systems."
+            ),
+            "metadata": {
+                "source_file": "gireesh_ai_profile_009.json",
+                "section": "work_style_and_productivity.weaknesses_and_risks",
+                "status": "pending_user_approval"
+            },
+            "visibility": "private"
+        }
+    ]
+
+    # --------------------------------------------------------------------------
+    # 3. STRICTLY PRIVATE RECORDS (Confidential Personal Details)
+    # --------------------------------------------------------------------------
+    private_records: List[Dict[str, Any]] = [
+        {
+            "source_id": "v2_private_family_history",
+            "title": "Confidential Family Background and 2012 Turning Point",
+            "category": "Family & Personal",
+            "year": 2012,
+            "content": (
+                "Confidential: Family background details, family members' specifics, parental relationship history, "
+                "and the passing of Gireesh's father in 2012. This event was a major emotional and developmental turning point "
+                "that shaped his inner resolve and devotion to supporting his family."
+            ),
+            "metadata": {
+                "source_files": ["ai-json.json", "mydata.json"],
+                "original_ids": ["ai_002", "mydata_family"],
+                "confidentiality": "STRICTLY_PRIVATE"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "v2_private_emotional_reactions",
+            "title": "Confidential Emotional Reactions and Trigger Responses",
+            "category": "Personal Psychology",
+            "year": None,
+            "content": (
+                "Confidential: Psychological reflections regarding anger triggers (reactions when wrongly blamed or misunderstood), "
+                "grief handling, emotional coping mechanisms, and internal stress management methods."
+            ),
+            "metadata": {
+                "source_files": ["gireesh_ai_profile_009.json"],
+                "original_ids": ["profile009_emotions_and_reactions", "profile009_anger_triggers"],
+                "confidentiality": "STRICTLY_PRIVATE"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "v2_private_relationships_boundaries",
+            "title": "Confidential Relationship Philosophies and Interpersonal Boundaries",
+            "category": "Personal Psychology",
+            "year": None,
+            "content": (
+                "Confidential: Personal criteria for genuine friendships, handling misunderstandings, detachment philosophies, "
+                "and boundaries regarding interpersonal connections."
+            ),
+            "metadata": {
+                "source_files": ["gireesh_ai_profile_009.json"],
+                "original_ids": ["profile009_relationships_and_connections"],
+                "confidentiality": "STRICTLY_PRIVATE"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "v2_private_lifestyle_daily_routine",
+            "title": "Confidential Daily Schedule, Sleep, and Health Habits",
+            "category": "Personal Lifestyle",
+            "year": None,
+            "content": (
+                "Confidential: Private daily routine, morning and night schedules, sleep patterns, dietary preferences, "
+                "and personal health approaches."
+            ),
+            "metadata": {
+                "source_files": ["gireesh_ai_profile_009.json"],
+                "original_ids": ["profile009_daily_life_and_habits", "profile009_lifestyle_and_health"],
+                "confidentiality": "STRICTLY_PRIVATE"
+            },
+            "visibility": "private"
+        },
+        {
+            "source_id": "v2_private_family_financial_vow",
+            "title": "Confidential Personal Mission for Family Support",
+            "category": "Family & Personal",
+            "year": None,
+            "content": (
+                "Confidential: Deep personal commitment to ensure his mother and family live peacefully without hardships, "
+                "and personal motivations tied to family responsibilities."
+            ),
+            "metadata": {
+                "source_files": ["gireesh_ai_profile_009.json"],
+                "original_ids": ["profile009_personal_goals", "profile009_motivation_drivers"],
+                "confidentiality": "STRICTLY_PRIVATE"
+            },
+            "visibility": "private"
+        }
+    ]
+
+    return {
+        "public": public_records,
+        "review_queue": approval_queue,
+        "private": private_records
+    }
+
+
+def main():
+    V2_DIR.mkdir(parents=True, exist_ok=True)
+    datasets = build_v2_dataset()
+
+    public_list = datasets["public"]
+    review_list = datasets["review_queue"]
+    private_list = datasets["private"]
+
+    # Combined master dataset (all records with distinct source_ids)
+    all_records = public_list + review_list + private_list
+
+    # Uniqueness check
+    seen = set()
+    for r in all_records:
+        sid = r["source_id"]
+        if sid in seen:
+            raise ValueError(f"Duplicate source_id detected: {sid}")
+        seen.add(sid)
+
+    # Save versioned files
+    pub_path = V2_DIR / "portfolio_data.v2.public.json"
+    rev_path = V2_DIR / "portfolio_data.v2.professional_approval_queue.json"
+    priv_path = V2_DIR / "portfolio_data.v2.private.json"
+    norm_path = V2_DIR / "portfolio_data.v2.normalized.json"
+
+    with open(pub_path, "w", encoding="utf-8") as f:
+        json.dump(public_list, f, indent=2, ensure_ascii=False)
+
+    with open(rev_path, "w", encoding="utf-8") as f:
+        json.dump(review_list, f, indent=2, ensure_ascii=False)
+
+    with open(priv_path, "w", encoding="utf-8") as f:
+        json.dump(private_list, f, indent=2, ensure_ascii=False)
+
+    with open(norm_path, "w", encoding="utf-8") as f:
+        json.dump(all_records, f, indent=2, ensure_ascii=False)
+
+    print("=" * 60)
+    print("🎉 CORRECTED V2 DATASET GENERATED SUCCESSFULLY!")
+    print(f"📁 Target Directory: {V2_DIR}")
+    print(f"   1. Public Cohesive Records:          {len(public_list)} -> {pub_path.name}")
+    print(f"   2. Professional Review Queue:        {len(review_list)} -> {rev_path.name}")
+    print(f"   3. Strictly Private Records:         {len(private_list)} -> {priv_path.name}")
+    print(f"   4. Total Master Records:             {len(all_records)} -> {norm_path.name}")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()

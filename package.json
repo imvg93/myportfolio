@@ -37,6 +37,11 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "uvicorn backend.app.main:app --reload --port 8000",
+    "dev:all": "concurrently -n \"next,python\" -c \"blue,green\" \"npm run dev\" \"npm run dev:backend\"",
+    "data:normalize": "./backend/venv/bin/python backend/scripts/normalize_dataset.py",
+    "data:ingest": "./backend/venv/bin/python backend/scripts/ingest_to_supabase.py",
+    "data:sync-pinecone": "./backend/venv/bin/python backend/scripts/sync_supabase_to_pinecone.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

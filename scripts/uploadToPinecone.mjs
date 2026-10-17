@@ -1,3 +1,8 @@
+/**
+ * @deprecated OBSOLETE - Use `backend/scripts/sync_supabase_to_pinecone.py` instead.
+ * This legacy script used 1536-dim OpenAI embeddings and SUPABASE_JSON_URL storage blobs,
+ * which conflicts with the 384-dim Hugging Face Pinecone index.
+ */
 import 'dotenv/config';
 import fetch from 'node-fetch';
 import { Pinecone } from '@pinecone-database/pinecone';

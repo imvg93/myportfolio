@@ -19,6 +19,23 @@ export async function POST(req: Request) {
     const json = await req.json();
     const { messages } = BodySchema.parse(json);
 
+    // 1. Delegate to Python FastAPI AI backend if running
+    const pythonAiUrl = process.env.PYTHON_AI_URL || 'http://127.0.0.1:8000';
+    try {
+      const pyRes = await fetch(`${pythonAiUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (pyRes.ok) {
+        const pyData = await pyRes.json();
+        return NextResponse.json(pyData);
+      }
+    } catch (_) {
+      // Python service offline or timed out; proceed to Next.js handler
+    }
+
     // Helpers
     const toSingleVector = (maybeMatrix: any): number[] => {
       if (Array.isArray(maybeMatrix) && maybeMatrix.length > 0 && Array.isArray(maybeMatrix[0])) {
@@ -67,7 +84,12 @@ export async function POST(req: Request) {
         if (!Array.isArray(vector) || vector.some((v) => typeof v !== 'number')) {
           throw new Error('Invalid embedding vector');
         }
-        const results: any = await index.query({ topK: 5, includeMetadata: true, vector });
+        const results: any = await index.query({
+          topK: 5,
+          includeMetadata: true,
+          vector,
+          filter: { visibility: { $eq: 'public' } },
+        });
         const chunks = (results?.matches || [])
           .filter((m: any) => m?.metadata?.content)
           .slice(0, 5)

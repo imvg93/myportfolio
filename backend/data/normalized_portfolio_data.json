@@ -1,0 +1,244 @@
+[
+  {
+    "source_id": "bio_001",
+    "title": "Early Life and Childhood",
+    "category": "Personal",
+    "year": 1999,
+    "content": "Veeranki Girish was born in Vijayawada, Andhra Pradesh, India. His childhood passed amid parental conflicts and frequent relocations between Andhra Pradesh and Telangana before the state was divided. Despite challenges, he remained curious and creative. He once dreamed of becoming a doctor but couldn’t pursue it due to financial difficulties.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "001",
+      "year_range": "1999–2005",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_002",
+    "title": "Family Background and Turning Point",
+    "category": "Family",
+    "year": null,
+    "content": "Gireesh’s father was a medical license supplier who passed away in 2012 — a major turning point that deeply affected his confidence. His mother, a homemaker, ensured he faced no hardship and took great care of him. Despite ups and downs, he considers himself lucky to have her support and describes his relationship with family as a blend of closeness and distance shaped by circumstances.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "002",
+      "year_range": null,
+      "type": "narrative_summary"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "bio_003",
+    "title": "School Life and Education",
+    "category": "Education",
+    "year": 2000,
+    "content": "Gireesh studied at MNR School, Balaji Vidyalayam, and Sri Chaitanya Techno School across Hyderabad and Machilipatnam. His school life was a mix of activity and shyness. He loved Maths and Science, disliked Hindi, and participated in a dance performance at a school annual day. After fourth class, losing his father forced him to move from Hyderabad to Machilipatnam, an event that left a lasting emotional impact.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "003",
+      "year_range": "2000–2015",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_004",
+    "title": "Career Beginning – Datavalley Internship",
+    "category": "Career",
+    "year": null,
+    "content": "In 2025, Gireesh joined Datavalley as a MERN Stack Intern through a family connection with the CEO. He viewed the opportunity as a divine blessing. Though he struggled initially, his persistence helped him adapt quickly. He is now confident in completing tasks on time and deeply understands both the backend and frontend aspects of web development.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "004",
+      "year_range": null,
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_005",
+    "title": "Skills and Technical Growth",
+    "category": "Skills and Knowledge",
+    "year": 2024,
+    "content": "Gireesh specializes in full-stack development using the MERN stack — MongoDB, Express.js, React.js, and Node.js — and is currently learning Artificial Intelligence and Machine Learning. He has strong communication and creativity skills, enjoys teaching others, and learns effectively through experimentation and interactive tools like ChatGPT.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "005",
+      "year_range": "2024–2025",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_006",
+    "title": "Achievements and Major Projects",
+    "category": "Achievements",
+    "year": 2023,
+    "content": "Among Gireesh’s proudest achievements are building the Catwalk Salon website for his grandmother’s salon and creating his own AI portfolio project. These works highlight his creativity, technical strength, and dedication to family. He considers developing his personal AI assistant as one of his life’s biggest milestones.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "006",
+      "year_range": "2023–2025",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_007",
+    "title": "Mindset and Learning Philosophy",
+    "category": "Personality",
+    "year": 2024,
+    "content": "Gireesh describes himself as curious and persistent. He learns best by doing, experimenting, and solving real-world problems. He combines self-learning through internet resources, tutorials, and AI tools with practical implementation. He believes failure is part of growth and every challenge is a lesson.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "007",
+      "year_range": "2024–2025",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "bio_008",
+    "title": "Life Values and Personal Beliefs",
+    "category": "Personal Growth",
+    "year": 2020,
+    "content": "He values creativity, patience, and adaptability. After facing emotional losses and hardships, Gireesh learned to stay calm and adjust with time. He believes in self-development and in inspiring others by transforming pain into progress. His story emphasizes perseverance and emotional intelligence as core strengths.",
+    "metadata": {
+      "source_file": "ai-json.json",
+      "original_id": "008",
+      "year_range": "2020–2025",
+      "type": "narrative_summary"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "prof_future_goals",
+    "title": "Professional Vision, Future Goals and Mission",
+    "category": "Vision & Goals",
+    "year": 2025,
+    "content": "Professional Goals: Gireesh’s goal is to master every aspect of technology. He believes in understanding all areas of tech — from development to AI — and never saying 'I don’t know'. His aim is to become capable of managing, building, and innovating in any technical field.\nPersonal Goals: Wants to ensure his mother and family live without any struggles or hardships. His personal mission is to make them proud and provide them a peaceful and happy life through his work and success.\nFive Year Vision: In the next 5 years, Gireesh sees himself as one of the most successful individuals in his field — respected, confident, and capable of leading major projects or teams with skill and vision.\nLife Mission: Dreams of building his own company and creating innovative tech products that solve real-world problems and inspire others to dream big.\nMotivation: His own working style — dedication, consistency, and focus — motivates him to keep pushing forward and learning something new every day.\nCore Message: {'to_the_world': 'Focus on what you’re doing. Stay consistent and determined — if you truly focus, you will definitely achieve success.', 'original_words': 'Focus what you doing, focus chey kathchitanga sadistham.'}",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "future_goals_and_vision",
+      "type": "psychological_profile"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "prof_work_style",
+    "title": "Work Style, Productivity, Focus and Core Strengths",
+    "category": "Work Style",
+    "year": 2025,
+    "content": "Planning Strategy: {'summary': 'Practical, outcome-focused — minimal upfront planning, strong bias toward execution and finishing quickly.', 'details': 'When starting a project, Veeranki prefers not to spend excessive time on elaborate plans. His main plan for any project is to complete it as soon as possible. He focuses on delivering working results rather than perfecting lengthy roadmaps.'}\nPreferred Mode: {'summary': 'Independent worker', 'details': 'Most comfortable working alone. Prefers owning tasks end-to-end and resolving obstacles personally before escalating. Works well when given autonomy and clear outcomes.'}\nFocus Methods: {'summary': 'Research-driven focus and deep thinking', 'details': 'Stays focused by researching the current task deeply — reading docs, examples, and related implementations. Uses deep thinking to solve complex issues rather than distraction-based focus methods.'}\nDeadline And Pressure Handling: {'summary': 'Calm, reflective — addresses pressure by deep thinking rather than panic', 'details': 'When facing deadlines or pressure, he slows down to think deeply about the problem and the correct approach. He uses logical analysis and prioritization to handle urgent tasks instead of reactive multitasking.'}\nMotivation Drivers: {'summary': 'Goals, personal situation, and family responsibilities', 'details': 'Primary motivation comes from long-term goals and the need to improve his family’s situation. These pressures turn into constructive energy that helps him complete work consistently.'}\nProductivity Routine: {'summary': 'Execution-first, learn-as-you-go', 'details': 'Typical pattern: start work quickly, research to unblock, implement a solution, iterate until working. Prefers completing a feature or bug fully rather than leaving partial items.'}\nStrengths: Strong execution bias — gets projects done quickly; Independent problem-solver who learns by doing and researching; Calm under pressure; uses deep thought rather than reactive stress\nWeaknesses And Risks: Minimal upfront planning may cause rework for very large projects; Working alone too long can delay useful collaboration or feedback; May under-document design decisions because focus is on finishing",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "work_style_and_productivity",
+      "type": "psychological_profile"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "prof_mindset_philosophy",
+    "title": "Core Personality Traits and Stress Management Approach",
+    "category": "Personality",
+    "year": 2025,
+    "content": "Traits: Gireesh is known for being calm and friendly in nature. He approaches people with kindness and rarely loses his temper. His personality blends patience with a sense of connection and understanding.\nStress Handling: When stressed or under pressure, he prefers to talk to the people he loves most. This emotional connection helps him feel relaxed and regain focus quickly.\nEmotional Summary: A calm, emotionally intelligent person who finds balance through relationships and purpose-driven work. He handles pressure with understanding and rarely lets anger control him.",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "personality_and_mindset",
+      "type": "psychological_profile"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "prof_emotions_triggers",
+    "title": "Private Emotional Reactions and Trigger Responses",
+    "category": "Personal Psychology",
+    "year": null,
+    "content": "Anger Triggers: He rarely gets angry, but when he does, it’s usually because someone blames or misunderstands him for something he didn’t do. That’s when his calm nature briefly turns into strong emotion.\nHappiness Expression: When Gireesh is happy, he smiles quietly to himself. He doesn’t always share his happiness openly with others — instead, he keeps it within, enjoying the feeling privately.\nSadness Reaction: When he feels sad or disappointed, he prefers to stay alone and process the emotion internally. Sometimes he sleeps to escape the feeling, or simply sits with his thoughts until the sadness passes.\nResponse To Appreciation: When someone praises or appreciates him, he gives a small, humble smile. Inside, he feels genuine joy and pride, but he doesn’t show it outwardly too much.\nEmotional Triggers: The thing that hurts him the most is betrayal or being cheated by someone he trusted. Dishonesty affects him deeply because he values loyalty and truth in relationships.\nEmotional Control: He rarely experiences extreme anger. Even in tough moments, he remains emotionally composed and calm, choosing peace and understanding over reaction.\nEmotional Summary: Gireesh is emotionally grounded and self-aware. He processes emotions internally rather than outwardly. Happiness makes him quietly content, sadness makes him reflective, and betrayal hurts him deeply — but through it all, he remains calm and strong.",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "emotions_and_reactions",
+      "type": "sensitive_profile"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "prof_relationships_values",
+    "title": "Personal Relationships, Attachment and Boundary Values",
+    "category": "Personal Psychology",
+    "year": null,
+    "content": "Importance: Gireesh believes the importance of relationships depends on the person involved. He doesn’t treat every relationship the same — he values those who are genuine and meaningful in his life.\nCore Values: He values loyalty and mutual understanding above everything else. For him, true connection means standing by each other with trust and emotional balance.\nExpression Of Care: He expresses care by doing what the other person asks or needs. Actions matter more to him than words, and he believes showing care through effort is the truest form of love.\nHandling Hurt Or Misunderstanding: Gireesh avoids staying connected with people who misunderstand or misjudge him. He prefers genuine relationships where people understand him deeply, rather than maintaining forced bonds.\nApproach To Detachment: If someone chooses to leave him, he lets them go. Though it hurts at first, he learns to accept it and move forward. He believes that pain must be faced and swallowed instead of running from it.\nIdeal Connection: His idea of a perfect connection is one built on mutual understanding, honesty, and emotional clarity — where both people know each other’s heart without having to explain everything.\nEmotional Summary: Gireesh is loyal and understanding in relationships but emotionally strong enough to let go when people fail to value his effort. His connections are deep, sincere, and driven by real care rather than temporary attachment.",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "relationships_and_connections",
+      "type": "sensitive_profile"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "prof_daily_lifestyle",
+    "title": "Personal Routine, Diet, Sleep and Lifestyle Habits",
+    "category": "Personal Lifestyle",
+    "year": null,
+    "content": "Daily Routine: Gireesh’s day follows a balanced and structured flow — he wakes up, has breakfast, gets ready for work, spends his day productively at the office, and returns home to rest and recharge. His routine reflects focus, simplicity, and discipline.\nDaily Habits: He practices daily exercise to stay active and coding to sharpen his technical skills. Both habits keep his mind and body strong, balancing health and growth.\nMorning Routine: Starts the morning with light stretches to refresh his body and prepare his mind for the day ahead.\nNight Routine: After finishing his day’s work, he eats his meal, reflects briefly, and winds down before sleeping peacefully.\nSimple Joys: Feels peaceful when exercising and eating healthy, sufficient food. Small, consistent habits like these bring him inner satisfaction.\nOverall Summary: Gireesh follows a mindful, health-conscious lifestyle — busy but balanced. He believes discipline in fitness, healthy eating, and good rest keeps his body and mind strong and aligned.\nLifestyle Type: Gireesh lives a busy yet balanced lifestyle. His days are filled with work, learning, and self-improvement, but he always maintains harmony between professional responsibilities and personal well-being.\nFood Preferences: He prefers homemade and healthy food. He values clean, nutritious meals that support both physical health and mental clarity.\nFitness Belief: He strongly believes that maintaining fitness is essential for controlling both the body and the mind. Without regular exercise, he feels the body stops responding to one’s discipline and focus.\nMental Health Approach: He doesn’t follow a defined mental health routine but naturally maintains calmness and peace through his composed mindset and structured daily life.\nSleep Schedule: He usually sleeps around 11 PM and wakes up before 8 AM, getting around 8 to 9 hours of rest daily — enough to recharge his energy for the next day.",
+    "metadata": {
+      "source_file": "gireesh_ai_profile_009.json",
+      "section": "daily_life_and_lifestyle",
+      "type": "sensitive_profile"
+    },
+    "visibility": "private"
+  },
+  {
+    "source_id": "detail_tech_skills",
+    "title": "Technical Skills Breakdown and Continuous Learning Method",
+    "category": "Skills and Knowledge",
+    "year": 2025,
+    "content": "Technical Skills: {'primary_focus': 'MERN Stack', 'description': 'Gireesh is skilled in full-stack web development using the MERN stack — MongoDB, Express.js, React.js, and Node.js. He can build complete, responsive web applications from backend APIs to front-end user interfaces with smooth integration.'}\nStrongest Skill: {'area': 'Web and Application Development', 'description': 'Confident in building scalable websites and applications, handling both the front-end and backend parts of projects efficiently.'}\nLearning Focus: {'topic': 'Artificial Intelligence and Machine Learning (AIML)', 'description': 'Currently expanding his knowledge into AI and ML to understand how intelligent systems work and how they can be applied to real-world products. He’s exploring deep learning, natural language processing, and model integration with web technologies.'}\nLearning Style: {'mindset': 'Curious and persistent', 'description': 'Learns best through practical experience and experimentation. Never gives up until fully understanding a concept, and enjoys solving problems by creating working solutions.'}\nNon-Technical Skills: [{'skill': 'Communication', 'description': 'Has strong communication skills and can clearly explain ideas, teach others, and interact confidently with teams or clients.'}, {'skill': 'Creativity', 'description': 'Highly creative thinker who enjoys experimenting with ideas, designing new solutions, and presenting work in unique ways.'}]\nLearning Method: {'sources': ['Internet', 'ChatGPT'], 'description': 'Learns by exploring tutorials, official documentation, and interactive guidance through ChatGPT conversations, combining theory with hands-on practice.'}",
+    "metadata": {
+      "source_file": "mydata.json",
+      "section": "skills_and_knowledge",
+      "type": "granular_fact"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "detail_projects_career",
+    "title": "Key Engineering Projects, Business Portal and Career Milestones",
+    "category": "Achievements and Projects",
+    "year": 2024,
+    "content": "Major Project: [{'name': 'Catwalk Salon Website', 'description': \"Developed a complete website for his grandmother's salon, named 'Catwalk Salon', showcasing his technical ability and personal dedication to family projects.\", 'link': 'https://www.catwalksalon.com'}]\nMajor Achievement: {'title': 'Creating My Own AI', 'description': 'Gireesh considers building his personal AI using advanced tools and technologies as one of his biggest life achievements. This AI is a reflection of his journey, personality, and growth — a digital version of himself designed to learn, evolve, and represent his story.'}\nCareer Start & Fields: {'year': 2025, 'company': 'Datavalley', 'role': 'MERN Stack Intern', 'how_got_job': \"Introduced to the Datavalley CEO through grandfather's student connection; after meeting, the CEO offered a seat on the first day itself, which felt like a divine blessing.\", 'description': 'Joined Datavalley as an intern and began learning and working in web development under guidance and mentorship.'} - ['Technology', 'Web Development', 'Software Engineering']\nBusiness Experience: {'has_business': False, 'description': 'No business ownership yet.'}\nChallenges Overcome: [{'description': 'Initially struggled to understand concepts and worked slowly at the start of the internship.', 'resolution': 'Gradually improved, picked up pace, and now manages to complete work on time with consistency and confidence.'}]\nMentoring & Leadership: {'description': 'Gireesh often helps others by guiding them in projects and sharing knowledge. He believes in collective learning and is always ready to support friends or juniors in their development journey.'}",
+    "metadata": {
+      "source_file": "mydata.json",
+      "section": "career_and_achievements",
+      "type": "granular_fact"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "detail_education",
+    "title": "Academic Education and Extracurricular Background",
+    "category": "Education",
+    "year": null,
+    "content": "College & Degree: {'name': 'Sri Chaitanya Junior College', 'location': 'Machilipatnam', 'course': 'Intermediate (MPC Group)'}\nSchooling: [{'school_name': 'MNR School', 'location': 'Kukatpally, Hyderabad', 'classes': '1st to 4th'}, {'school_name': 'Balaji Vidyalayam', 'location': 'Machilipatnam', 'classes': '5th to 8th'}, {'school_name': 'Sri Chaitanya Techno School', 'location': 'Machilipatnam', 'classes': '9th to 10th'}]\nFavorite Subjects: ['Maths', 'Science']\nActivities: [{'activity': 'Dance performance', 'event': 'Annual Day at school', 'description': \"Performed dance during school annual day but didn't participate in further activities later.\"}]\nMemorable Moment: After 4th class, lost father and moved from Hyderabad to Machilipatnam to continue studies and survive. That change deeply impacted life and remains unforgettable.",
+    "metadata": {
+      "source_file": "mydata.json",
+      "section": "education",
+      "type": "granular_fact"
+    },
+    "visibility": "public"
+  },
+  {
+    "source_id": "detail_family_private",
+    "title": "Confidential Family Background and Personal Turning Point",
+    "category": "Family",
+    "year": 2012,
+    "content": "Birth Place: Vijayawada, Andhra Pradesh, India\nFamily Details: Even after losing my father, my mother cared for me deeply and ensured I faced no hardships. I feel like the luckiest person because of her.\nFamily Members: Mother (Alive): Took great care of me after my father's passing; faced struggles but ensured I never lacked anything. | Father (Passed away in 2012): His death was a major turning point in my life that made me lose confidence for a while.\nTurning Point: Father's death in 2012, which deeply affected confidence and emotional strength.\nRelationship Summary: Mixed — some days close and available, other days distant due to personal and life circumstances.",
+    "metadata": {
+      "source_file": "mydata.json",
+      "section": "family",
+      "type": "sensitive_fact"
+    },
+    "visibility": "private"
+  }
+]
