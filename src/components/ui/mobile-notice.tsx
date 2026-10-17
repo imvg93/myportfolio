@@ -1,12 +1,19 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 
 export function MobileNotice() {
   const [show, setShow] = React.useState(false);
+  const pathname = usePathname();
 
   React.useEffect(() => {
+    // Do not show on chat or verification routes
+    if (pathname?.startsWith('/ask-me') || pathname?.startsWith('/verify')) {
+      setShow(false);
+      return;
+    }
     const checkMobile = () => {
       if (typeof window === "undefined") return false;
       if (window.localStorage.getItem("mobile-notice-dismissed") === "true") {
