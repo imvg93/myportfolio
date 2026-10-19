@@ -34,7 +34,7 @@ async function getChatCollection(): Promise<Collection<ChatMessageDocument>> {
     ? ''
     : decodeURIComponent(uri.slice(pathStart + 1).split(/[/?]/, 1)[0] || '');
   const databaseName = process.env.MONGODB_DATABASE?.trim() || uriDatabase || 'portfolio';
-  const collectionName = process.env.MONGODB_CHAT_COLLECTION?.trim() || 'chat_messages';
+  const collectionName = process.env.MONGODB_CHAT_COLLECTION?.trim() || 'chats';
   return client.db(databaseName).collection<ChatMessageDocument>(collectionName);
 }
 

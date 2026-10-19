@@ -2,11 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAuthSession, getSessionToken } from '@/lib/auth-session';
 import { storeChatTurn } from '@/lib/mongodb';
-import {
-  buildPortfolioSystemPrompt,
-  formatPortfolioContext,
-  loadPublicPortfolioRecords,
-} from '@/lib/portfolio-context';
+import { buildPortfolioSystemPrompt } from '@/lib/portfolio-context';
+import { retrievePortfolioContext } from '@/lib/pinecone-retrieval';
 
 const BodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -53,12 +50,14 @@ export async function POST(req: Request) {
 
     if (openAiKey) {
       try {
+        const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
         let context = '';
-        try {
-          const publicRecords = await loadPublicPortfolioRecords();
-          context = formatPortfolioContext(publicRecords);
-        } catch (error) {
-          console.error('Could not load public portfolio context:', error);
+        if (latestUserMessage) {
+          try {
+            context = await retrievePortfolioContext(latestUserMessage.content);
+          } catch (error) {
+            console.error('Could not retrieve portfolio context from Pinecone:', error);
+          }
         }
 
         const { default: OpenAI } = await import('openai');
