@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { randomInt } from 'node:crypto';
 import { storeOtp } from '../../../src/lib/supabase';
 
 const BodySchema = z.object({
@@ -8,7 +9,7 @@ const BodySchema = z.object({
 });
 
 function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1_000_000));
 }
 
 async function sendEmailViaResend(to: string, subject: string, html: string) {

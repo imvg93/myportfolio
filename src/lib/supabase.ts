@@ -51,12 +51,20 @@ export async function verifyAndConsumeOtp(email: string, code: string) {
 
   const expiresRaw = (data as any).expiresAt ?? (data as any).expires_at;
   const expiresAtMs = expiresRaw ? new Date(expiresRaw).getTime() : NaN;
-  const isExpired = Number.isFinite(expiresAtMs) ? expiresAtMs < Date.now() : false;
+  const isExpired = !Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now();
   const isMatch = String(data.otp).trim() === String(code).trim();
   if (!isMatch || isExpired) return { valid: false };
 
-  // Delete consumed OTP so it cannot be reused
-  await supabase.from('otp').delete().eq('email', normalizedEmail);
+  // Atomically consume only the matching OTP so concurrent requests cannot reuse it.
+  const { data: consumed, error: consumeError } = await supabase
+    .from('otp')
+    .delete()
+    .eq('email', normalizedEmail)
+    .eq('otp', data.otp)
+    .select('email')
+    .maybeSingle();
+  if (consumeError) throw consumeError;
+  if (!consumed) return { valid: false };
 
   const userName: string | undefined = (data as any).name ?? undefined;
   return { valid: true, name: userName };

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyAndConsumeOtp } from '../../../src/lib/supabase';
+import { AUTH_SESSION_COOKIE, AUTH_SESSION_TTL_SECONDS, createAuthSession } from '../../../src/lib/auth-session';
 
 const BodySchema = z.object({
   email: z.string().email(),
@@ -15,27 +16,22 @@ export async function POST(req: Request) {
     const { valid, name } = await verifyAndConsumeOtp(email, otp);
     if (!valid) return NextResponse.json({ ok: false, error: 'Invalid or expired code' }, { status: 401 });
 
+    const token = await createAuthSession(email, name);
     const res = NextResponse.json({ ok: true });
-    res.cookies.set('verified_user', email.toLowerCase(), {
+    res.cookies.set(AUTH_SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60, // 1 hour
+      maxAge: AUTH_SESSION_TTL_SECONDS,
     });
-    if (name) {
-      res.cookies.set('verified_name', String(name), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60,
-      });
-    }
+    // Remove legacy client-asserted identity cookies so they can never be reused.
+    res.cookies.delete('verified_user');
+    res.cookies.delete('verified_name');
     return res;
   } catch (err: any) {
-    const message = err?.message || 'Verification failed';
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    console.error('OTP verification failed:', err);
+    return NextResponse.json({ ok: false, error: 'Verification failed. Please try again.' }, { status: 400 });
   }
 }
 
