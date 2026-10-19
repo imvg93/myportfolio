@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-
 const APPROVED_PRIVATE_SOURCE_IDS = [
   'v2_private_family_history',
   'v2_private_emotional_reactions',
@@ -8,62 +6,67 @@ const APPROVED_PRIVATE_SOURCE_IDS = [
   'v2_private_family_financial_vow',
 ] as const;
 
-type PineconeMatch = {
-  metadata?: {
-    title?: string;
-    category?: string;
-    year?: number;
-    content?: string;
-  };
+const OWNER_INTRO_SOURCE_ID = 'owner_who_is_girish_intro_001';
+
+function isGeneralIdentityQuestion(question: string) {
+  const normalized = question.toLowerCase().replace(/[’']/g, '').replace(/[?!.,]/g, ' ').replace(/\s+/g, ' ').trim();
+  return /^(who is|who are) (girish|gireesh)( veeranki)?$/.test(normalized)
+    || /^(who are you|introduce yourself|introduce (girish|gireesh)( veeranki)?)$/.test(normalized);
+}
+
+type PineconeRecordFields = {
+  title?: string;
+  category?: string;
+  year?: number;
+  content?: string;
+};
+
+type PineconeSearchResponse = {
+  result?: { hits?: Array<{ fields?: PineconeRecordFields }> };
 };
 
 function config() {
   const apiKey = process.env.PINECONE_API_KEY;
   const host = process.env.PINECONE_HOST?.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const dimension = Number(process.env.PINECONE_DIMENSION || '384');
   if (!apiKey || !host) {
     throw new Error('PINECONE_API_KEY and PINECONE_HOST must be configured on the server');
   }
-  if (!Number.isInteger(dimension) || dimension < 1) {
-    throw new Error('PINECONE_DIMENSION must be a positive integer');
-  }
-  return { apiKey, host, dimension };
+  return { apiKey, host };
 }
 
 export async function retrievePortfolioContext(question: string): Promise<string> {
-  const { apiKey, host, dimension } = config();
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const embedding = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: question,
-    dimensions: dimension,
-  });
-  const vector = embedding.data[0]?.embedding;
-  if (!vector || vector.length !== dimension) throw new Error('Embedding dimension does not match Pinecone configuration');
-
-  const response = await fetch(`https://${host}/query`, {
+  const { apiKey, host } = config();
+  const identityQuestion = isGeneralIdentityQuestion(question);
+  const response = await fetch(`https://${host}/records/namespaces/portfolio/search`, {
     method: 'POST',
-    headers: { 'Api-Key': apiKey, 'Content-Type': 'application/json' },
+    headers: {
+      'Api-Key': apiKey,
+      'Content-Type': 'application/json',
+      'X-Pinecone-Api-Version': '2025-10',
+    },
     body: JSON.stringify({
-      namespace: 'portfolio',
-      vector,
-      topK: 5,
-      includeMetadata: true,
-      filter: {
-        $or: [
-          { visibility: { $eq: 'public' } },
-          { source_id: { $in: [...APPROVED_PRIVATE_SOURCE_IDS] } },
-        ],
+      query: {
+        top_k: identityQuestion ? 1 : 5,
+        inputs: { text: question },
+        filter: identityQuestion
+          ? { source_id: { $eq: OWNER_INTRO_SOURCE_ID } }
+          : {
+              $or: [
+                { visibility: { $eq: 'public' } },
+                { source_id: { $in: [...APPROVED_PRIVATE_SOURCE_IDS] } },
+              ],
+          },
       },
+      fields: ['title', 'category', 'year', 'content'],
     }),
   });
-  if (!response.ok) throw new Error(`Pinecone query failed (${response.status})`);
-  const result = (await response.json()) as { matches?: PineconeMatch[] };
-  return (result.matches ?? [])
-    .map(({ metadata }) => {
-      const content = metadata?.content?.trim();
+  if (!response.ok) throw new Error(`Pinecone search failed (${response.status})`);
+  const result = (await response.json()) as PineconeSearchResponse;
+  return (result.result?.hits ?? [])
+    .map(({ fields }) => {
+      const content = fields?.content?.trim();
       if (!content) return '';
-      const heading = [metadata?.title, metadata?.category, metadata?.year]
+      const heading = [fields?.title, fields?.category, fields?.year]
         .filter((part) => part !== null && part !== undefined && String(part).trim())
         .join(' | ');
       return `${heading}\n${content}`;

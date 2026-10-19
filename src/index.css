@@ -2,6 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Desktop chat thinking orb; message history remains in the normal feed. */
+.askme-thinking-orb {
+  position: relative;
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: none;
+  place-items: center;
+  isolation: isolate;
+}
+
+.askme-thinking-orb__core {
+  position: relative;
+  z-index: 1;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgb(165 243 252 / 0.7);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 25%, rgb(224 242 254 / 0.95), transparent 18%),
+    radial-gradient(circle at 68% 72%, rgb(34 211 238 / 0.8), transparent 38%),
+    radial-gradient(circle at 40% 40%, #2563eb, #111827 72%);
+  box-shadow: 0 0 18px rgb(34 211 238 / 0.45), inset -7px -8px 15px rgb(2 6 23 / 0.8);
+  animation: askme-orb-breathe 2.4s ease-in-out infinite;
+}
+
+.askme-thinking-orb__ring {
+  position: absolute;
+  inset: 0.1rem;
+  border: 1px solid rgb(103 232 249 / 0.48);
+  border-radius: 50%;
+  transform: rotate(-24deg) scaleY(0.42);
+  animation: askme-orb-spin 4s linear infinite;
+}
+
+.askme-thinking-orb__ring--two {
+  inset: 0.3rem;
+  border-color: rgb(129 140 248 / 0.5);
+  transform: rotate(58deg) scaleY(0.55);
+  animation-direction: reverse;
+  animation-duration: 5.5s;
+}
+
+@media (min-width: 640px) {
+  .askme-thinking-orb {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .askme-thinking-orb__core {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+
+  .askme-thinking-orb__ring {
+    inset: 0.2rem;
+  }
+
+  .askme-thinking-orb__ring--two {
+    inset: 0.45rem;
+  }
+}
+
+@keyframes askme-orb-spin {
+  to { rotate: 360deg; }
+}
+
+@keyframes askme-orb-breathe {
+  50% { scale: 1.07; filter: brightness(1.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .askme-thinking-orb__core,
+  .askme-thinking-orb__ring {
+    animation: none;
+  }
+}
+
+/* Light palette for the chat; the shared dark class drives Tailwind dark: rules. */
+.askme-shell.theme-light {
+  background-color: #f8fafc !important;
+  color: #0f172a;
+}
+
+.askme-shell.theme-light .askme-header,
+.askme-shell.theme-light .askme-footer {
+  background-color: rgb(255 255 255 / 0.92);
+  border-color: rgb(148 163 184 / 0.4);
+  box-shadow: 0 -8px 30px rgb(15 23 42 / 0.08);
+}
+
+.askme-shell.theme-light .askme-dropdown,
+.askme-shell.theme-light .askme-starter-card,
+.askme-shell.theme-light .askme-assistant-bubble,
+.askme-shell.theme-light .askme-composer,
+.askme-shell.theme-light .askme-suggestion {
+  background-color: rgb(255 255 255 / 0.92);
+  border-color: rgb(148 163 184 / 0.45);
+  color: #0f172a;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+
+.askme-shell.theme-light .askme-assistant-bubble {
+  background-color: rgb(255 255 255 / 0.86);
+}
+
+.askme-shell.theme-light .askme-code-card {
+  background-color: #0c1220;
+  color: #f1f5f9;
+}
+
+.askme-shell.theme-light .askme-code-header {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.askme-shell.theme-light .askme-dropdown-item:hover,
+.askme-shell.theme-light .askme-copy-button:hover,
+.askme-shell.theme-light .askme-suggestion:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.askme-shell.theme-light .askme-textarea {
+  color: #0f172a;
+}
+
+.askme-shell.theme-light .askme-textarea::placeholder {
+  color: #64748b;
+}
+
+.askme-shell.theme-light .askme-welcome-title,
+.askme-shell.theme-light .askme-primary-text,
+.askme-shell.theme-light .askme-header .text-white,
+.askme-shell.theme-light .askme-assistant-bubble .text-white {
+  color: #0f172a;
+}
+
+.askme-shell.theme-light .askme-send-button.text-white {
+  color: #fff;
+}
+
+.askme-shell.theme-light .askme-user-bubble,
+.askme-shell.theme-light .askme-user-bubble * {
+  color: #fff;
+}
+
+.askme-shell.theme-light .askme-muted,
+.askme-shell.theme-light .text-slate-400,
+.askme-shell.theme-light .text-slate-500 {
+  color: #64748b;
+}
+
+.askme-shell.theme-light .text-slate-100,
+.askme-shell.theme-light .text-slate-200,
+.askme-shell.theme-light .text-slate-300 {
+  color: #334155;
+}
+
+.askme-shell.theme-light .askme-code-card.text-slate-100 {
+  color: #f1f5f9;
+}
+
 /* Scoped typeface for the Ask Me and verification flows. */
 .font-plus-jakarta,
 .font-plus-jakarta * {

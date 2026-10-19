@@ -10,8 +10,26 @@ type ChatMessageDocument = {
 
 const RETENTION_SECONDS = 180 * 24 * 60 * 60;
 
-let clientPromise: Promise<MongoClient> | null = null;
+let clientPromise: Promise<{ client: MongoClient; databaseName: string }> | null = null;
 let indexesPromise: Promise<void> | null = null;
+
+export function getMongoUriDatabaseName(uri: string, parsedDatabaseName: string): string | undefined {
+  let hasDatabasePath: boolean;
+  try {
+    hasDatabasePath = new URL(uri).pathname.replace(/^\/+/, '').length > 0;
+  } catch {
+    throw new Error('MONGODB_URI is invalid; check its format and database path.');
+  }
+  return hasDatabasePath ? parsedDatabaseName : undefined;
+}
+
+export function resolveMongoDatabaseName(configuredName?: string, uriDatabaseName?: string): string {
+  const databaseName = configuredName?.trim() || uriDatabaseName?.trim() || 'portfolio';
+  if (databaseName.includes('.')) {
+    throw new Error('Invalid MongoDB database name: the selected name contains ".". Check MONGODB_DATABASE or the database path in MONGODB_URI.');
+  }
+  return databaseName;
+}
 
 async function getChatCollection(): Promise<Collection<ChatMessageDocument>> {
   const uri = process.env.MONGODB_URI?.trim();
@@ -19,21 +37,15 @@ async function getChatCollection(): Promise<Collection<ChatMessageDocument>> {
 
   if (!clientPromise) {
     const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10000 });
-    clientPromise = client.connect().catch((error) => {
+    const uriDatabaseName = getMongoUriDatabaseName(uri, client.options.dbName);
+    const databaseName = resolveMongoDatabaseName(process.env.MONGODB_DATABASE, uriDatabaseName);
+    clientPromise = client.connect().then(() => ({ client, databaseName })).catch((error) => {
       clientPromise = null;
       throw error;
     });
   }
 
-  const client = await clientPromise;
-  // The MongoDB driver reports "test" as dbName when the URI has no database
-  // path. Detect an actual URI path so the app defaults to portfolio instead.
-  const authorityStart = uri.indexOf('://') + 3;
-  const pathStart = uri.indexOf('/', authorityStart);
-  const uriDatabase = pathStart < 0
-    ? ''
-    : decodeURIComponent(uri.slice(pathStart + 1).split(/[/?]/, 1)[0] || '');
-  const databaseName = process.env.MONGODB_DATABASE?.trim() || uriDatabase || 'portfolio';
+  const { client, databaseName } = await clientPromise;
   const collectionName = process.env.MONGODB_CHAT_COLLECTION?.trim() || 'chats';
   return client.db(databaseName).collection<ChatMessageDocument>(collectionName);
 }

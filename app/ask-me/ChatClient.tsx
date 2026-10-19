@@ -18,7 +18,10 @@ import {
   Flame,
   Code2,
   Heart,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '@/lib/use-theme';
 
 type Message = {
   id: string;
@@ -144,15 +147,15 @@ function FormattedContent({ content }: { content: string }) {
           return (
             <div
               key={idx}
-              className="my-2 overflow-hidden rounded-xl border border-slate-800 bg-[#0c1220] text-slate-100 shadow-lg sm:my-3 sm:rounded-2xl"
+              className="askme-code-card my-2 overflow-hidden rounded-xl border border-slate-800 bg-[#0c1220] text-slate-100 shadow-lg sm:my-3 sm:rounded-2xl"
             >
-              <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-3 py-1.5 text-xs text-slate-400 sm:px-4 sm:py-2">
+              <div className="askme-code-header flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-3 py-1.5 text-xs text-slate-400 sm:px-4 sm:py-2">
                 <span className="font-mono tracking-wider uppercase text-cyan-400 font-semibold">
                   {language || 'code'}
                 </span>
                 <button
                   onClick={() => copyCode(codeBody, idx)}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                  className="askme-copy-button flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-slate-300 hover:bg-slate-800 hover:text-white transition"
                 >
                   {copiedIndex === idx ? (
                     <>
@@ -221,6 +224,22 @@ function renderInlineFormatting(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
+function ThinkingOrb() {
+  return (
+    <div className="flex items-center gap-3 py-2 pl-1 sm:gap-4 sm:py-3 sm:pl-14" role="status" aria-live="polite">
+      <div className="askme-thinking-orb" aria-hidden="true">
+        <span className="askme-thinking-orb__core" />
+        <span className="askme-thinking-orb__ring askme-thinking-orb__ring--one" />
+        <span className="askme-thinking-orb__ring askme-thinking-orb__ring--two" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-slate-200">Gireesh is thinking</p>
+        <p className="mt-0.5 text-xs text-slate-400">Preparing a reply…</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState('');
@@ -231,6 +250,7 @@ export default function ChatClient() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [askedSuggestionCategories, setAskedSuggestionCategories] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const feedRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -268,14 +288,17 @@ export default function ChatClient() {
     const previousStyles = {
       htmlBackground: html.style.backgroundColor,
       bodyBackground: body.style.backgroundColor,
+      colorScheme: html.style.colorScheme,
       htmlOverflow: html.style.overflow,
       bodyOverflow: body.style.overflow,
       htmlOverscroll: html.style.overscrollBehavior,
       bodyOverscroll: body.style.overscrollBehavior,
     };
 
-    html.style.backgroundColor = '#030712';
-    body.style.backgroundColor = '#030712';
+    const background = theme === 'dark' ? '#030712' : '#f8fafc';
+    html.style.backgroundColor = background;
+    body.style.backgroundColor = background;
+    html.style.colorScheme = theme;
     html.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
     html.style.overscrollBehavior = 'none';
@@ -284,15 +307,16 @@ export default function ChatClient() {
     return () => {
       html.style.backgroundColor = previousStyles.htmlBackground;
       body.style.backgroundColor = previousStyles.bodyBackground;
+      html.style.colorScheme = previousStyles.colorScheme;
       html.style.overflow = previousStyles.htmlOverflow;
       body.style.overflow = previousStyles.bodyOverflow;
       html.style.overscrollBehavior = previousStyles.htmlOverscroll;
       body.style.overscrollBehavior = previousStyles.bodyOverscroll;
     };
-  }, []);
+  }, [theme]);
 
-  // Keep the chat app inside the visible mobile viewport while the software
-  // keyboard is open. The message feed can then scroll without moving the composer.
+  // Resize the chat for the visible area above the mobile keyboard without
+  // moving the fixed app shell when Safari pans the visual viewport on focus.
   useEffect(() => {
     const viewport = window.visualViewport;
     const root = document.documentElement;
@@ -303,10 +327,6 @@ export default function ChatClient() {
       const keyboardIsOpen = window.innerHeight - viewport.height > 120;
       root.style.setProperty('--askme-viewport-height', `${viewport.height}px`);
       root.style.setProperty(
-        '--askme-viewport-top',
-        `${keyboardIsOpen ? viewport.offsetTop : 0}px`,
-      );
-      root.style.setProperty(
         '--askme-footer-safe-bottom',
         keyboardIsOpen ? '0px' : 'env(safe-area-inset-bottom)',
       );
@@ -314,15 +334,12 @@ export default function ChatClient() {
 
     syncVisibleViewport();
     viewport?.addEventListener('resize', syncVisibleViewport);
-    viewport?.addEventListener('scroll', syncVisibleViewport);
     window.addEventListener('resize', syncVisibleViewport);
 
     return () => {
       viewport?.removeEventListener('resize', syncVisibleViewport);
-      viewport?.removeEventListener('scroll', syncVisibleViewport);
       window.removeEventListener('resize', syncVisibleViewport);
       root.style.removeProperty('--askme-viewport-height');
-      root.style.removeProperty('--askme-viewport-top');
       root.style.removeProperty('--askme-footer-safe-bottom');
     };
   }, []);
@@ -394,15 +411,14 @@ export default function ChatClient() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
+    // Sending begins a read phase on mobile: dismiss the software keyboard and
+    // keep the feed pinned to the newest message and reply.
+    shouldAutoScrollRef.current = true;
+    textareaRef.current?.blur();
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      // Keep mobile Safari/Chrome's keyboard open after the send tap or Enter.
-      // Starter prompt buttons pass textToSend and should not open the keyboard.
-      if (textToSend === undefined) {
-        textareaRef.current.focus({ preventScroll: true });
-      }
     }
     setLoading(true);
 
@@ -472,10 +488,9 @@ export default function ChatClient() {
 
   return (
     <div
-      className="font-plus-jakarta fixed left-0 right-0 top-0 z-0 flex h-[100dvh] w-full flex-col overflow-hidden overscroll-none bg-[#030712] font-sans text-slate-100"
+      className={`askme-shell theme-${theme} font-plus-jakarta fixed left-0 right-0 top-0 z-0 flex h-[100dvh] w-full flex-col overflow-hidden overscroll-none bg-slate-50 font-sans text-slate-900 dark:bg-[#030712] dark:text-slate-100`}
       style={{
         height: 'var(--askme-viewport-height, 100dvh)',
-        top: 'var(--askme-viewport-top, 0px)',
       }}
     >
       {/* Bright, full-page neural mind backdrop */}
@@ -484,15 +499,28 @@ export default function ChatClient() {
         className={`pointer-events-none absolute inset-0 z-0 ${messages.length === 0 ? 'block' : 'hidden sm:block'}`}
         style={{
           backgroundImage:
-            "linear-gradient(rgba(3,7,18,0.3), rgba(3,7,18,0.48)), url('/gireesh-brain-cutout.png')",
+            `${theme === 'dark' ? 'linear-gradient(rgba(3,7,18,0.3), rgba(3,7,18,0.48))' : 'linear-gradient(rgba(248,250,252,0.25), rgba(248,250,252,0.65))'}, url('/gireesh-brain-cutout.png')`,
           backgroundSize: 'cover, clamp(200px, 55vw, 360px) auto',
           backgroundPosition: 'center, center 35%',
           backgroundRepeat: 'no-repeat',
         }}
       />
 
+      {/* Mobile-only wallpaper from the supplied iPhone mockup demo. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 sm:hidden"
+        style={{
+          backgroundImage:
+            `${theme === 'dark' ? 'linear-gradient(rgba(3, 7, 18, 0.58), rgba(3, 7, 18, 0.76))' : 'linear-gradient(rgba(248, 250, 252, 0.52), rgba(248, 250, 252, 0.76))'}, url('https://cdn.21st.dev/assets/mirror/fe/fe93bc0812d60130c9eef6d68e02fa99ded883248049a9107bfb64dbd37fae34.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+
       {/* 1. TOP HEADER (BRIGHT, CRISP, FROSTED GLASS) */}
-      <header className="relative z-30 flex min-h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/80 px-2 pb-1 pt-[calc(env(safe-area-inset-top)+0.25rem)] backdrop-blur-2xl shadow-lg shadow-black/20 sm:h-16 sm:px-6 sm:py-0">
+      <header className="askme-header relative z-30 flex min-h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/80 px-2 pb-1 pt-[calc(env(safe-area-inset-top)+0.25rem)] backdrop-blur-2xl shadow-lg shadow-black/20 sm:h-16 sm:px-6 sm:py-0">
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <button
             onClick={() => router.back()}
@@ -534,6 +562,14 @@ export default function ChatClient() {
         </div>
 
         <div ref={menuRef} className="relative flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
           <span className="hidden max-w-[160px] truncate text-xs font-medium text-slate-300 sm:inline">
             {displayName}
           </span>
@@ -552,13 +588,13 @@ export default function ChatClient() {
             <div
               role="menu"
               aria-label="Chat options"
-              className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-xl shadow-black/40"
+              className="askme-dropdown absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-xl shadow-black/40"
             >
               <button
                 type="button"
                 role="menuitem"
                 onClick={handleClearChat}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
+                className="askme-dropdown-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
               >
                 <MessageSquarePlus className="h-4 w-4 text-slate-400" />
                 New chat
@@ -570,7 +606,7 @@ export default function ChatClient() {
                   setMenuOpen(false);
                   router.push('/');
                 }}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
+                className="askme-dropdown-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
               >
                 <UserRound className="h-4 w-4 text-slate-400" />
                 My profile
@@ -580,7 +616,7 @@ export default function ChatClient() {
                 type="button"
                 role="menuitem"
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-rose-300 transition hover:bg-rose-950/50 hover:text-rose-200"
+                className="askme-dropdown-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-rose-300 transition hover:bg-rose-950/50 hover:text-rose-200"
               >
                 <LogOut className="h-4 w-4" />
                 Log out
@@ -606,10 +642,10 @@ export default function ChatClient() {
               transition={{ duration: 0.3 }}
               className="flex flex-1 flex-col px-1 pb-4 pt-5 text-center sm:px-3 sm:pb-8 sm:pt-10"
             >
-              <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+              <h1 className="askme-welcome-title text-xl font-semibold tracking-tight text-white sm:text-2xl">
                 Hi {displayName}, welcome!
               </h1>
-              <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
+              <p className="askme-muted mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
                 Ask me anything, or choose a question below.
               </p>
               <div className="mx-auto mt-auto grid w-full max-w-xl grid-cols-1 gap-2.5 pt-16 min-[360px]:grid-cols-2 sm:mt-5 sm:gap-3 sm:pt-0">
@@ -620,16 +656,16 @@ export default function ChatClient() {
                     <button
                       key={suggestion.category}
                       onClick={() => handleSend(suggestion.prompt)}
-                      className="group flex min-h-[92px] items-start gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:p-3.5"
+                      className="askme-starter-card group flex min-h-[92px] items-start gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:p-3.5"
                     >
                       <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${suggestion.accent}`}>
                         <SuggestionIcon className="h-4 w-4" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
+                        <span className="askme-muted block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
                           {suggestion.category}
                         </span>
-                        <span className="mt-1 block text-xs font-medium leading-snug text-slate-100 sm:text-sm">
+                        <span className="askme-primary-text mt-1 block text-xs font-medium leading-snug text-slate-100 sm:text-sm">
                           {suggestion.question}
                         </span>
                       </span>
@@ -670,8 +706,8 @@ export default function ChatClient() {
                 <div
                   className={`relative max-w-[86%] rounded-2xl shadow-sm sm:max-w-[80%] ${
                     m.role === 'user'
-                      ? 'px-2.5 py-1.5 sm:px-5 sm:py-3.5 rounded-tr-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-blue-500/20'
-                      : 'w-full px-0 py-0 text-slate-100 sm:w-auto sm:px-5 sm:py-3.5 rounded-tl-sm border-0 bg-transparent shadow-none sm:border sm:border-slate-700/90 sm:bg-slate-950/90 sm:backdrop-blur-xl sm:shadow-lg sm:shadow-black/25'
+                      ? 'askme-user-bubble px-2.5 py-1.5 sm:px-5 sm:py-3.5 rounded-tr-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-blue-500/20'
+                      : 'askme-assistant-bubble w-full px-0 py-0 text-slate-100 sm:w-auto sm:px-5 sm:py-3.5 rounded-tl-sm border-0 bg-transparent shadow-none sm:border sm:border-slate-700/90 sm:bg-slate-950/90 sm:backdrop-blur-xl sm:shadow-lg sm:shadow-black/25'
                   }`}
                 >
                   {/* Header Tag for Assistant */}
@@ -701,7 +737,7 @@ export default function ChatClient() {
                       </span>
                       <button
                         onClick={() => copyMessage(m.content, m.id)}
-                        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 hover:text-white transition sm:px-2.5"
+                        className="askme-copy-button flex items-center gap-1.5 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 hover:text-white transition sm:px-2.5"
                         title="Copy answer"
                       >
                         {copiedId === m.id ? (
@@ -730,41 +766,15 @@ export default function ChatClient() {
             ))}
           </AnimatePresence>
 
-          {/* REAL-TIME HUMANIZED TYPING INDICATOR */}
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-start gap-2 sm:gap-4"
-            >
-              <div className="relative hidden h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-cyan-400/80 bg-slate-900 p-0.5 animate-pulse shadow-md sm:block">
-                <Image
-                  src="/gireesh-brain-cutout.png"
-                  alt="Gireesh Mind"
-                  width={40}
-                  height={40}
-                  className="h-full w-full object-cover rounded-full"
-                />
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 shadow-md">
-                <div className="flex gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-blue-500 animate-bounce [animation-delay:-0.3s]" />
-                  <span className="h-2 w-2 rounded-full bg-cyan-500 animate-bounce [animation-delay:-0.15s]" />
-                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce" />
-                </div>
-                <span className="text-xs sm:text-sm font-medium text-slate-300">
-                  Gireesh is reflecting & writing back...
-                </span>
-              </div>
-            </motion.div>
-          )}
+          {/* Thinking orb stays inside the conversation feed, after prior messages. */}
+          {loading && <ThinkingOrb />}
 
         </div>
       </div>
 
       {/* 3. BOTTOM FLOATING PROMPT CAPSULE */}
       <footer
-        className="relative z-30 w-full shrink-0 border-t border-slate-800/80 bg-slate-950/85 px-2 pt-1.5 backdrop-blur-2xl sm:px-6 sm:pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]"
+        className="askme-footer relative z-30 w-full shrink-0 border-t border-slate-800/80 bg-slate-950/85 px-2 pt-1.5 backdrop-blur-2xl sm:px-6 sm:pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]"
         style={{
           paddingBottom: 'calc(var(--askme-footer-safe-bottom, env(safe-area-inset-bottom)) + 6px)',
         }}
@@ -778,7 +788,7 @@ export default function ChatClient() {
                 <button
                   key={suggestion.category}
                   onClick={() => handleSend(suggestion.prompt)}
-                  className="min-h-8 shrink-0 rounded-full border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-cyan-500/60 hover:bg-slate-800 hover:text-white sm:text-xs"
+                  className="askme-suggestion min-h-8 shrink-0 rounded-full border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-cyan-500/60 hover:bg-slate-800 hover:text-white sm:text-xs"
                 >
                   {suggestion.question}
                 </button>
@@ -787,7 +797,7 @@ export default function ChatClient() {
           )}
 
           {/* Input Box */}
-          <div className="relative flex items-end gap-1.5 rounded-2xl border border-slate-700 bg-slate-950/95 p-1.5 shadow-lg shadow-black/30 transition-all focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 sm:gap-2 sm:p-2.5">
+          <div className="askme-composer relative flex items-end gap-1.5 rounded-2xl border border-slate-700 bg-slate-950/95 p-1.5 shadow-lg shadow-black/30 transition-all focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 sm:gap-2 sm:p-2.5">
             <textarea
               ref={textareaRef}
               rows={1}
@@ -801,14 +811,14 @@ export default function ChatClient() {
                 }
               }}
               placeholder="Ask Gireesh anything"
-              className="max-h-24 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 text-base text-white placeholder-slate-500 outline-none no-scrollbar sm:max-h-36 sm:min-h-[44px] sm:px-3"
+              className="askme-textarea max-h-24 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 text-base text-white placeholder-slate-500 outline-none no-scrollbar sm:max-h-36 sm:min-h-[44px] sm:px-3"
             />
 
             <button
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => handleSend()}
               disabled={!input.trim() || loading}
-              className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl font-medium transition-all duration-200 ${
+              className={`askme-send-button flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl font-medium transition-all duration-200 ${
                 input.trim() && !loading
                   ? 'bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:scale-105 active:scale-95'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-70'
@@ -818,7 +828,7 @@ export default function ChatClient() {
               <ArrowUp className="h-5 w-5 stroke-[2.5]" />
             </button>
           </div>
-          <p className="mt-2 px-2 text-xs text-slate-500">
+          <p className="askme-muted mt-2 px-2 text-xs text-slate-500">
             Messages stay on this page while it is open and are not saved for later.
           </p>
 
