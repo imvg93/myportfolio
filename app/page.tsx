@@ -10,6 +10,7 @@ import { ProjectsPage } from '../src/components/ProjectsPage';
 import { AboutMePage } from '../src/components/AboutMePage';
 import { SkillsPage } from '../src/components/SkillsPage';
 import { ConnectRoomPage } from '../src/components/ConnectRoomPage';
+import { useTheme } from '../src/lib/use-theme';
 import {
   Activity,
   User,
@@ -89,6 +90,7 @@ export default function Home() {
   const [isHomeModalOpen, setIsHomeModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
 
   const handleDockClick = (title: string) => {
     if (title === 'Home') {
@@ -173,14 +175,16 @@ export default function Home() {
     <div 
       className="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden"
       style={{
-        background: 'radial-gradient(ellipse 180% 120% at center top, rgba(191, 219, 254, 1) 0%, rgba(147, 197, 253, 0.65) 18%, rgba(191, 219, 254, 0.45) 35%, rgba(219, 234, 254, 0.3) 50%, rgba(239, 246, 255, 0.2) 65%, rgba(255, 255, 255, 1) 80%)',
+        background: theme === 'dark'
+          ? 'radial-gradient(ellipse 180% 120% at center top, #1e293b 0%, #0f172a 46%, #020617 100%)'
+          : 'radial-gradient(ellipse 180% 120% at center top, rgba(191, 219, 254, 1) 0%, rgba(147, 197, 253, 0.65) 18%, rgba(191, 219, 254, 0.45) 35%, rgba(219, 234, 254, 0.3) 50%, rgba(239, 246, 255, 0.2) 65%, rgba(255, 255, 255, 1) 80%)',
         fontFamily: 'Be Vietnam Pro, sans-serif'
       }}
     >
       {/* Top Branding Element */}
       <div className="mb-12 md:mb-16 relative z-10">
-        <div className="bg-white rounded-full px-6 py-3 shadow-sm flex items-center gap-4">
-          <span className="font-bold text-black text-lg" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>Portfolio</span>
+        <div className="flex items-center gap-4 rounded-full bg-white px-6 py-3 shadow-sm dark:bg-neutral-900">
+          <span className="text-lg font-bold text-black dark:text-white" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>Portfolio</span>
           <div className="w-px h-4 bg-gray-300"></div>
           <TextShimmer 
             as="span" 
@@ -281,6 +285,13 @@ export default function Home() {
                     <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
                   </DockItem>
                 );
+              } else if (item.title === 'Theme') {
+                return (
+                  <DockItem key={idx} className='aspect-square rounded-full' onClick={toggleTheme}>
+                    <DockLabel>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</DockLabel>
+                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
+                  </DockItem>
+                );
               } else {
                 return (
                   <DockItem
@@ -306,7 +317,7 @@ export default function Home() {
         
 
         {/* Sub-headline */}
-        <p  className="text-4xl md:text-5xl lg:text-6xl font-bold text-black leading-tight mb-5 text-center mx-auto"
+        <p  className="mx-auto mb-5 text-center text-4xl font-bold leading-tight text-black dark:text-white md:text-5xl lg:text-6xl"
           style={{ fontFamily: 'Be Vietnam Pro, sans-serif', textAlign: 'center' }}>
         My Journey With One Touch
         </p>

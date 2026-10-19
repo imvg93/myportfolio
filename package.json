@@ -40,6 +40,7 @@
     "data:normalize": "./backend/venv/bin/python backend/scripts/normalize_dataset.py",
     "data:ingest": "./backend/venv/bin/python backend/scripts/ingest_to_supabase.py",
     "pinecone:sync": "node scripts/syncApprovedPortfolioToPinecone.mjs",
+    "pinecone:migrate-integrated": "node scripts/migrateToIntegratedPinecone.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
