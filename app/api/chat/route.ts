@@ -23,11 +23,7 @@ async function persistTurn(
 ) {
   const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user');
   if (!lastUserMessage || !reply) return;
-  try {
-    await storeChatTurn(conversationId, visitorEmail, lastUserMessage.content, reply);
-  } catch (error) {
-    console.error('Chat log write failed:', error);
-  }
+  await storeChatTurn(conversationId, visitorEmail, lastUserMessage.content, reply);
 }
 
 export async function POST(req: Request) {
@@ -82,7 +78,15 @@ export async function POST(req: Request) {
         : 'The chatbot is not configured yet. Please try again later.';
     }
 
-    await persistTurn(conversationId, visitorEmail, messages, reply);
+    try {
+      await persistTurn(conversationId, visitorEmail, messages, reply);
+    } catch (error) {
+      console.error('Chat log write failed:', error);
+      return NextResponse.json(
+        { ok: false, error: 'The reply could not be saved. Please try again.' },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ ok: true, reply });
   } catch (error: any) {
     const message = error?.message || 'Chat request failed';
