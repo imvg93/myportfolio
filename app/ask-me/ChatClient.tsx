@@ -819,7 +819,7 @@ export default function ChatClient() {
             </button>
           </div>
           <p className="mt-2 px-2 text-xs text-slate-500">
-            Your conversation and the email you provided may be stored for private review and deleted after 180 days.
+            Messages stay on this page while it is open and are not saved for later.
           </p>
 
         </div>

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAuthSession, getSessionToken } from '@/lib/auth-session';
-import { storeChatTurn } from '@/lib/mongodb';
 import { buildPortfolioSystemPrompt } from '@/lib/portfolio-context';
 import { retrievePortfolioContext } from '@/lib/pinecone-retrieval';
 
@@ -15,15 +14,10 @@ const BodySchema = z.object({
   ).min(1),
 });
 
-async function persistTurn(
-  conversationId: string,
-  visitorEmail: string,
-  messages: Array<{ role: string; content: string }>,
-  reply: string,
-) {
-  const lastUserMessage = [...messages].reverse().find((message) => message.role === 'user');
-  if (!lastUserMessage || !reply) return;
-  await storeChatTurn(conversationId, visitorEmail, lastUserMessage.content, reply);
+function removeGenericClosingInvitation(reply: string) {
+  return reply
+    .replace(/\s*If you have more questions about Gireesh or technology,\s*feel free to ask[!.]?\s*$/i, '')
+    .trim();
 }
 
 export async function POST(req: Request) {
@@ -38,9 +32,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const visitorEmail = session.email;
-
-    const { conversationId, messages } = BodySchema.parse(await req.json());
+    const { messages } = BodySchema.parse(await req.json());
     const openAiKey = process.env.OPENAI_API_KEY;
     let reply = '';
 
@@ -66,7 +58,8 @@ export async function POST(req: Request) {
           ],
           temperature: 0.7,
         });
-        reply = completion.choices[0]?.message?.content?.trim() || '';
+        const generatedReply = completion.choices[0]?.message?.content?.trim() || '';
+        reply = removeGenericClosingInvitation(generatedReply);
       } catch (error) {
         console.error('OpenAI chat request failed:', error);
       }
@@ -78,15 +71,6 @@ export async function POST(req: Request) {
         : 'The chatbot is not configured yet. Please try again later.';
     }
 
-    try {
-      await persistTurn(conversationId, visitorEmail, messages, reply);
-    } catch (error) {
-      console.error('Chat log write failed:', error);
-      return NextResponse.json(
-        { ok: false, error: 'The reply could not be saved. Please try again.' },
-        { status: 503 },
-      );
-    }
     return NextResponse.json({ ok: true, reply });
   } catch (error: any) {
     const message = error?.message || 'Chat request failed';

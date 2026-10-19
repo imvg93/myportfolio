@@ -184,9 +184,9 @@ add column if not exists name text;
 
 ### Private chatbot transcript logs
 
-Chat transcripts are stored in MongoDB. Set `MONGODB_URI` in `.env.local` and in the deployment's server-side environment variables. The app uses the URI database name when present; otherwise it uses `MONGODB_DATABASE` or `portfolio`. `MONGODB_CHAT_COLLECTION` is optional and defaults to `chat_messages`. The first chat write creates indexes for conversation ordering, email lookup, and automatic removal after 180 days. The app's only MongoDB operation is inserting chat turns; there is no visitor-facing read route. The chat already collects email on the verification page and the server takes it from the HTTP-only cookie. Keep `MONGODB_URI` private and never expose it through `NEXT_PUBLIC_*` variables.
+Chat transcript persistence is temporarily disabled. `/api/chat` does not connect to MongoDB or write visitor messages, and the chat UI keeps messages only in React state while the page is open. Refreshing or leaving the page clears that in-memory history. MongoDB code and configuration are retained for a future re-integration; the MongoDB environment variables are not needed for chat responses during this period.
 
-The SQL files under `supabase/migrations/` describe an earlier Supabase-based logging design and are not needed for MongoDB transcript storage. Supabase is used for OTP verification, resume requests, and approved public portfolio context for AI chat.
+The SQL files under `supabase/migrations/` describe an earlier Supabase-based transcript logging design and are not active for chat transcripts. Supabase remains in use for OTP verification, resume requests, and approved public portfolio context for AI chat.
 
 The OTP table is also accessed only by server routes using the Service Role key. Keep that key server-side; do not expose it through `NEXT_PUBLIC_*` variables or client code.
 
