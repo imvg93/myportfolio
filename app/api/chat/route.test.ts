@@ -3,6 +3,15 @@
 import { POST } from './route';
 import { storeChatTurn } from '@/lib/mongodb';
 import { buildPortfolioSystemPrompt, formatPortfolioContext, loadPublicPortfolioRecords } from '@/lib/portfolio-context';
+import { getAuthSession } from '@/lib/auth-session';
+
+jest.mock('@/lib/auth-session', () => ({
+  getAuthSession: jest.fn(),
+  getSessionToken: (request: Request) => {
+    const match = request.headers.get('cookie')?.match(/(?:^|;\s*)verified_session=([^;]+)/);
+    return match?.[1] ?? null;
+  },
+}));
 
 jest.mock('@/lib/mongodb', () => ({
   storeChatTurn: jest.fn().mockResolvedValue(undefined),
@@ -51,6 +60,7 @@ describe('/api/chat', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.OPENAI_API_KEY;
+    (getAuthSession as jest.Mock).mockResolvedValue({ email: 'visitor@example.com', name: 'Visitor' });
   });
 
   afterAll(() => {
@@ -58,10 +68,10 @@ describe('/api/chat', () => {
     else process.env.OPENAI_API_KEY = originalOpenAiKey;
   });
 
-  it('uses OpenAI with public Supabase context and stores the reply with verified email', async () => {
+  it('uses OpenAI with public Supabase context and stores the reply with session email', async () => {
     process.env.OPENAI_API_KEY = 'test-openai-key';
 
-    const response = await POST(chatRequest('verified_user=Visitor%40Example.com'));
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ reply: 'OpenAI reply' });
@@ -77,7 +87,7 @@ describe('/api/chat', () => {
   });
 
   it('stores a friendly fallback when OpenAI is not configured', async () => {
-    const response = await POST(chatRequest('verified_user=visitor%40example.com'));
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`));
     const result = await response.json();
 
     expect(response.status).toBe(200);
@@ -91,8 +101,9 @@ describe('/api/chat', () => {
     );
   });
 
-  it('rejects requests without a valid verified email before calling OpenAI or MongoDB', async () => {
+  it('rejects a forged legacy email cookie before calling OpenAI or MongoDB', async () => {
     process.env.OPENAI_API_KEY = 'test-openai-key';
+    (getAuthSession as jest.Mock).mockResolvedValue(null);
 
     const response = await POST(chatRequest('verified_user=not-an-email'));
 
@@ -108,7 +119,7 @@ describe('/api/chat', () => {
       messages: [{ role: 'user', content: 'Question' }],
     };
 
-    const response = await POST(chatRequest('verified_user=visitor%40example.com', invalidPayload));
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`, invalidPayload));
 
     expect(response.status).toBe(400);
     expect(loadPublicPortfolioRecords).not.toHaveBeenCalled();

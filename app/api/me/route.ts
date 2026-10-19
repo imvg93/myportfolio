@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
-
-function parseCookie(header: string | null | undefined, key: string): string | undefined {
-  if (!header) return undefined;
-  for (const part of header.split(';')) {
-    const [k, v] = part.split('=');
-    if (k && k.trim() === key) return v ? decodeURIComponent(v) : undefined;
-  }
-  return undefined;
-}
+import { getAuthSession, getSessionToken } from '../../../src/lib/auth-session';
 
 export async function GET(req: Request) {
-  const email = parseCookie(req.headers.get('cookie'), 'verified_user');
-  const name = parseCookie(req.headers.get('cookie'), 'verified_name');
-  return NextResponse.json({ email: email || null, name: name || null });
+  try {
+    const session = await getAuthSession(getSessionToken(req));
+    return NextResponse.json({ email: session?.email ?? null, name: session?.name ?? null }, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch {
+    return NextResponse.json({ email: null, name: null }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
 }
 
 
