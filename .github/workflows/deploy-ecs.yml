@@ -11,13 +11,15 @@ permissions:
   contents: read
   id-token: write
 
+
 env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: myportfolio
   ECS_CLUSTER: myportfolio-cluster
-  ECS_SERVICE: myportfolio-service
+  ECS_SERVICE: myportfolio-task-service-gy9102vo
   TASK_DEFINITION_FAMILY: myportfolio-task
   CONTAINER_NAME: myportfolio
+
 
 jobs:
   deploy:
