@@ -182,7 +182,13 @@ alter table public.otp
 add column if not exists name text;
 ```
 
-No RLS is required when using the Service Role key on server routes. If you enable RLS, add policies that allow inserts/selects/deletes for your server role only.
+### Private chatbot transcript logs
+
+Chat transcripts are stored in MongoDB. Set `MONGODB_URI` in `.env.local` and in the deployment's server-side environment variables. The app uses the URI database name when present; otherwise it uses `MONGODB_DATABASE` or `portfolio`. `MONGODB_CHAT_COLLECTION` is optional and defaults to `chat_messages`. The first chat write creates indexes for conversation ordering, email lookup, and automatic removal after 180 days. The app's only MongoDB operation is inserting chat turns; there is no visitor-facing read route. The chat already collects email on the verification page and the server takes it from the HTTP-only cookie. Keep `MONGODB_URI` private and never expose it through `NEXT_PUBLIC_*` variables.
+
+The SQL files under `supabase/migrations/` describe an earlier Supabase-based logging design and are not needed for MongoDB transcript storage. Supabase is used for OTP verification, resume requests, and approved public portfolio context for AI chat.
+
+The OTP table is also accessed only by server routes using the Service Role key. Keep that key server-side; do not expose it through `NEXT_PUBLIC_*` variables or client code.
 
 ### Routes
 
@@ -190,34 +196,10 @@ No RLS is required when using the Service Role key on server routes. If you enab
 - `/ask-me` – protected AI chat page (requires `verified_user` cookie)
 - `/api/send-otp` – generates and emails OTP (5‑minute expiry)
 - `/api/verify-otp` – verifies OTP and sets `verified_user` cookie (1 hour)
-- `/api/chat` – sends messages to OpenAI with Gireesh persona system prompt
+- `/api/chat` – sends messages to OpenAI with approved public portfolio records read from Supabase
 
 Clicking "Insight AI" in the dock navigates to `/ask-me`.
 
----
+### Chat AI and portfolio context
 
-## 🐍 Python AI Engine (Insight AI Backend)
-
-The core AI intelligence, RAG vector retrieval, and LLM orchestration are built with **Python 3** and **FastAPI** located in [`backend/`](file:///Users/chanti/coding-files/myportfolio/backend):
-
-- **Framework**: FastAPI with asynchronous I/O and automatic Swagger UI at `http://localhost:8000/docs`
-- **Vector Database (RAG)**: Pinecone with 384-dimensional sentence embeddings (`all-MiniLM-L6-v2`) via Hugging Face
-- **LLM Multi-Provider Fallback**: OpenAI (GPT-4o / GPT-4o-mini) and Hugging Face Inference
-- **Data Ingestion**: Python script in [`backend/scripts/upload_to_pinecone.py`](file:///Users/chanti/coding-files/myportfolio/backend/scripts/upload_to_pinecone.py)
-- **Containerization**: [`backend/Dockerfile`](file:///Users/chanti/coding-files/myportfolio/backend/Dockerfile) included for easy production deployment
-
-### Running the Python AI Backend:
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-Or from the root directory using npm:
-```bash
-npm run dev:backend   # Starts the Python FastAPI backend
-npm run dev:all       # Runs both Next.js and Python backend concurrently
-```
+The active Next.js chat uses OpenAI for answer generation and reads only `visibility = 'public'` rows from `public.portfolio_data` in Supabase for portfolio context. Hugging Face and Pinecone are no longer part of the active chat flow, so no Pinecone embedding dimension is needed. The former Python AI backend and Pinecone ingestion scripts under `backend/` are retained as legacy files and are not called by the app.
