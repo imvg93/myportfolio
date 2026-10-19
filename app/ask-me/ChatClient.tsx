@@ -28,12 +28,27 @@ type Message = {
   modelUsed?: string;
 };
 
-function createMessageId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+function createUuid() {
+  const cryptoApi = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
+
+  if (typeof cryptoApi?.randomUUID === 'function') {
+    return cryptoApi.randomUUID();
   }
 
-  return `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  if (typeof cryptoApi?.getRandomValues !== 'function') {
+    throw new Error('Secure random number generation is unavailable in this browser.');
+  }
+
+  const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function createMessageId() {
+  return createUuid();
 }
 
 const STARTER_PROMPTS = [
@@ -208,6 +223,7 @@ function renderInlineFormatting(text: string): string {
 
 export default function ChatClient() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId, setConversationId] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -221,6 +237,10 @@ export default function ChatClient() {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const shouldAutoScrollRef = useRef(true);
+
+  useEffect(() => {
+    setConversationId(createUuid());
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -353,6 +373,8 @@ export default function ChatClient() {
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend ?? input).trim();
     if (!text || loading) return;
+    const activeConversationId = conversationId || createUuid();
+    if (!conversationId) setConversationId(activeConversationId);
 
     const normalize = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
     const normalizedText = normalize(text);
@@ -389,6 +411,7 @@ export default function ChatClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          conversationId: activeConversationId,
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),
       });
@@ -426,6 +449,7 @@ export default function ChatClient() {
 
   const handleClearChat = () => {
     setMessages([]);
+    setConversationId(createUuid());
     setInput('');
     setAskedSuggestionCategories([]);
     setMenuOpen(false);
@@ -794,6 +818,9 @@ export default function ChatClient() {
               <ArrowUp className="h-5 w-5 stroke-[2.5]" />
             </button>
           </div>
+          <p className="mt-2 px-2 text-xs text-slate-500">
+            Your conversation and the email you provided may be stored for private review and deleted after 180 days.
+          </p>
 
         </div>
       </footer>

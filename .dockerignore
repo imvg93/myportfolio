@@ -1,0 +1,16 @@
+.git
+.next
+node_modules
+coverage
+out
+dist
+backend
+supabase
+.env
+.env.*
+!.env.example
+!env.example
+set_1_childhood_family_questions.json
+*.log
+Dockerfile*
+.dockerignore
