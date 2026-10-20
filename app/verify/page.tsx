@@ -296,7 +296,7 @@ export default function VerifyPage() {
                       </button>
                     </div>
                     <p className="mt-1 text-[11px] text-amber-800 leading-relaxed">
-                      Your test passcode is <strong>{devOtp}</strong> (also printed in your server terminal).
+                      Your local development passcode is <strong>{devOtp}</strong>. It is not written to server logs.
                     </p>
                   </motion.div>
                 )}

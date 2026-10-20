@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import { verifyAndConsumeOtp } from './supabase';
+import { hashOtp } from './otp-security';
 import { createClient } from '@supabase/supabase-js';
 
 jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn() }));
@@ -8,59 +9,50 @@ jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn() }));
 describe('verifyAndConsumeOtp', () => {
   let otpRecord: Record<string, unknown> | null;
   let consumed: Record<string, unknown> | null;
-  let deleteCalled: boolean;
   let readQuery: any;
   let consumeQuery: any;
+  let updateQuery: any;
   const adminClient = { from: jest.fn() };
+  const email = 'visitor@example.com';
+  const code = '123456';
+  const requestId = '22222222-2222-4222-8222-222222222222';
 
   beforeEach(() => {
     jest.clearAllMocks();
-    otpRecord = { email: 'visitor@example.com', otp: '123456', expiresAt: new Date(Date.now() + 60_000).toISOString() };
-    consumed = { email: 'visitor@example.com' };
-    deleteCalled = false;
-    readQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      maybeSingle: jest.fn(async () => ({ data: otpRecord, error: null })),
-    };
-    consumeQuery = {
-      delete: jest.fn(() => { deleteCalled = true; return consumeQuery; }),
-      eq: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      maybeSingle: jest.fn(async () => ({ data: consumed, error: null })),
-    };
-    adminClient.from = jest.fn().mockReturnValueOnce(readQuery).mockReturnValueOnce(consumeQuery);
-    (createClient as jest.Mock).mockReturnValue(adminClient);
     process.env.SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+    otpRecord = { email, otp_hash: hashOtp(email, code), request_id: requestId, failed_attempts: 0, expiresAt: new Date(Date.now() + 60_000).toISOString() };
+    consumed = { email };
+    readQuery = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), maybeSingle: jest.fn(async () => ({ data: otpRecord, error: null })) };
+    consumeQuery = { delete: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), select: jest.fn().mockReturnThis(), maybeSingle: jest.fn(async () => ({ data: consumed, error: null })) };
+    updateQuery = { update: jest.fn().mockReturnThis(), eq: jest.fn().mockResolvedValue({ error: null }) };
+    adminClient.from = jest.fn().mockReturnValueOnce(readQuery).mockReturnValueOnce(consumeQuery);
+    (createClient as jest.Mock).mockReturnValue(adminClient);
   });
 
-  it('rejects an expired OTP without consuming another record', async () => {
+  it('rejects expired and malformed expiration timestamps without consuming the OTP', async () => {
     otpRecord!.expiresAt = new Date(Date.now() - 1000).toISOString();
-    await expect(verifyAndConsumeOtp('visitor@example.com', '123456')).resolves.toEqual({ valid: false });
-    expect(deleteCalled).toBe(false);
-  });
-
-  it('rejects an OTP with no valid expiration timestamp', async () => {
+    await expect(verifyAndConsumeOtp(email, code)).resolves.toMatchObject({ valid: false, expired: true });
+    expect(consumeQuery.delete).not.toHaveBeenCalled();
     otpRecord!.expiresAt = 'invalid';
-    await expect(verifyAndConsumeOtp('visitor@example.com', '123456')).resolves.toEqual({ valid: false });
-    expect(deleteCalled).toBe(false);
+    adminClient.from.mockReset().mockReturnValueOnce(readQuery);
+    await expect(verifyAndConsumeOtp(email, code)).resolves.toMatchObject({ valid: false, expired: true });
   });
 
-  it('rejects a wrong OTP without consuming it', async () => {
-    await expect(verifyAndConsumeOtp('visitor@example.com', '000000')).resolves.toEqual({ valid: false });
-    expect(deleteCalled).toBe(false);
+  it('rejects wrong codes and increments attempts without storing the submitted code', async () => {
+    adminClient.from.mockReset().mockReturnValueOnce(readQuery).mockReturnValueOnce(updateQuery);
+    await expect(verifyAndConsumeOtp(email, '000000')).resolves.toMatchObject({ valid: false, attempts: 1 });
+    expect(updateQuery.update).toHaveBeenCalledWith({ failed_attempts: 1 });
+    expect(consumeQuery.delete).not.toHaveBeenCalled();
   });
 
-  it('consumes a valid OTP once and returns the stored name', async () => {
+  it('consumes a matching keyed digest once and returns only the stored name', async () => {
     otpRecord!.name = 'Visitor';
-    await expect(verifyAndConsumeOtp('Visitor@Example.com', '123456')).resolves.toEqual({ valid: true, name: 'Visitor' });
-    expect(deleteCalled).toBe(true);
-    expect(consumeQuery.eq).toHaveBeenNthCalledWith(1, 'email', 'visitor@example.com');
-    expect(consumeQuery.eq).toHaveBeenNthCalledWith(2, 'otp', '123456');
-
+    await expect(verifyAndConsumeOtp('Visitor@Example.com', code)).resolves.toMatchObject({ valid: true, name: 'Visitor', requestId, attempts: 1 });
+    expect(consumeQuery.eq).toHaveBeenNthCalledWith(1, 'email', email);
+    expect(consumeQuery.eq).toHaveBeenNthCalledWith(2, 'otp_hash', hashOtp(email, code));
     consumed = null;
     adminClient.from.mockReset().mockReturnValueOnce(readQuery).mockReturnValueOnce(consumeQuery);
-    await expect(verifyAndConsumeOtp('visitor@example.com', '123456')).resolves.toEqual({ valid: false });
+    await expect(verifyAndConsumeOtp(email, code)).resolves.toMatchObject({ valid: false });
   });
 });

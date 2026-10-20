@@ -32,7 +32,7 @@ describe('/ask-me chat client', () => {
         return { json: async () => ({ email: 'visitor@example.com', name: 'Visitor' }) };
       }
       if (String(input) === '/api/chat') {
-        return { json: async () => ({ ok: true, reply: 'Here is the answer from the assistant.' }) };
+        return { ok: true, status: 200, json: async () => ({ ok: true, reply: 'Here is the answer from the assistant.' }) };
       }
       return { json: async () => ({}) };
     }) as jest.Mock;
@@ -51,6 +51,6 @@ describe('/ask-me chat client', () => {
 
     expect(await screen.findByText('Here is the answer from the assistant.')).toBeInTheDocument();
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/chat', expect.objectContaining({ method: 'POST' })));
-    expect(screen.getByText('Messages stay on this page while it is open and are not saved for later.')).toBeInTheDocument();
+    expect(screen.getByText('Conversations and the email used to sign in may be stored for review and service improvement.')).toBeInTheDocument();
   });
 });

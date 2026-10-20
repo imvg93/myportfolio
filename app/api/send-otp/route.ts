@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { storeOtp } from '../../../src/lib/supabase';
+import { consumeOtpRateLimit, recordEmailAttempt, recordOtpRequest, safeMonitoringWrite, updateEmailAttempt, updateOtpActivity } from '@/lib/monitoring';
 
 const BodySchema = z.object({
   email: z.string().email(),
@@ -10,6 +11,12 @@ const BodySchema = z.object({
 
 function generateOtp(): string {
   return String(randomInt(100000, 1_000_000));
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character] ?? character);
 }
 
 async function sendEmailViaResend(to: string, subject: string, html: string) {
@@ -33,9 +40,8 @@ async function sendEmailViaResend(to: string, subject: string, html: string) {
     html,
   });
 
-  if (result.error) {
-    throw new Error(result.error.message || 'Resend delivery failed');
-  }
+  if (result.error) throw new Error('provider_rejected');
+  return { messageId: result.data?.id ?? null, providerStatus: null as number | null };
 }
 
 async function sendEmailViaSmtp(to: string, subject: string, html: string) {
@@ -57,7 +63,7 @@ async function sendEmailViaSmtp(to: string, subject: string, html: string) {
     secure,
     auth: { user, pass },
     tls: {
-      rejectUnauthorized: false, // Fix for self-signed certificate error
+      rejectUnauthorized: true,
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
@@ -68,28 +74,47 @@ async function sendEmailViaSmtp(to: string, subject: string, html: string) {
     from = `Gireesh <${user}>`;
   }
 
-  await transporter.sendMail({ from, to, subject, html });
+  const result = await transporter.sendMail({ from, to, subject, html });
+  const responseCode = /^\s*(\d{3})/.exec(result.response || '')?.[1];
+  return { messageId: result.messageId ?? null, providerStatus: responseCode ? Number(responseCode) : null };
 }
 
 export async function POST(req: Request) {
   try {
     const json = await req.json();
     const { email, name } = BodySchema.parse(json);
+    const normalizedEmail = email.trim().toLowerCase();
+    const purpose = 'login';
+    const requestId = randomUUID();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    let allowed: boolean;
+    try {
+      allowed = await consumeOtpRateLimit(normalizedEmail, 'request', 5, 15 * 60);
+    } catch {
+      return NextResponse.json({ ok: false, error: 'OTP service is temporarily unavailable.' }, { status: 503 });
+    }
+    if (!allowed) {
+      await safeMonitoringWrite('rate limited OTP request', async () => {
+        await recordOtpRequest({ email: normalizedEmail, requestId, purpose, expiresAt });
+        await updateOtpActivity(requestId, { email_status: 'unknown', request_status: 'failed', email_failure_code: 'rate_limited' });
+      });
+      return NextResponse.json({ ok: false, error: 'Too many code requests. Please wait and try again.' }, { status: 429 });
+    }
 
     const code = generateOtp();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    // Always store OTP first in Supabase
-    await storeOtp(email, code, expiresAt, name);
+    await storeOtp(normalizedEmail, code, expiresAt, name, requestId, purpose);
+    await safeMonitoringWrite('OTP request', () => recordOtpRequest({ email: normalizedEmail, requestId, purpose, expiresAt }));
 
     const subject = `${code} is your verification code`;
+    const safeName = escapeHtml(name);
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; color: #1e293b;">
         <div style="text-align: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 6px;">Gireesh Portfolio</h2>
           <p style="font-size: 14px; color: #64748b; margin: 0;">Verification Code for Insight AI Access</p>
         </div>
-        <p style="font-size: 15px; line-height: 1.5; color: #334155; margin-bottom: 16px;">Hi <strong>${name}</strong>,</p>
+        <p style="font-size: 15px; line-height: 1.5; color: #334155; margin-bottom: 16px;">Hi <strong>${safeName}</strong>,</p>
         <p style="font-size: 15px; line-height: 1.5; color: #334155; margin-bottom: 24px;">Use the verification passcode below to continue to the AI chat:</p>
         <div style="text-align: center; margin: 28px 0;">
           <div style="display: inline-block; font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 14px 28px; background: #0f172a; color: #ffffff; border-radius: 12px; font-family: monospace;">
@@ -108,53 +133,64 @@ export async function POST(req: Request) {
     const smtpPass = process.env.SMTP_PASS?.trim();
     const hasSmtp = Boolean(smtpUser && smtpPass);
 
-    // 1. Try Resend if configured
+    let providerFailureCode = 'configuration_missing';
+    let providerResponseStatus: number | null = null;
+    const tryProvider = async (provider: 'resend' | 'smtp') => {
+      let activityId: string | null = null;
+      await safeMonitoringWrite('email attempt', async () => { activityId = await recordEmailAttempt({ requestId, email: normalizedEmail, purpose, provider }); });
+      try {
+        const result = provider === 'resend'
+          ? await sendEmailViaResend(normalizedEmail, subject, html)
+          : await sendEmailViaSmtp(normalizedEmail, subject, html);
+        if (activityId) await safeMonitoringWrite('email accepted', () => updateEmailAttempt(activityId!, {
+          delivery_status: 'accepted', accepted_at: new Date().toISOString(), provider_message_id: result.messageId,
+          provider_response_status: result.providerStatus,
+        }));
+        await safeMonitoringWrite('OTP accepted', () => updateOtpActivity(requestId, {
+          email_status: 'accepted', email_provider: provider, request_status: 'accepted',
+          email_provider_status: result.providerStatus,
+        }));
+        return true;
+      } catch (error) {
+        providerFailureCode = error instanceof Error && error.message === 'provider_rejected' ? 'provider_rejected' : 'transport_error';
+        const responseStatus = (error as { statusCode?: unknown; responseCode?: unknown })?.statusCode
+          ?? (error as { responseCode?: unknown })?.responseCode;
+        providerResponseStatus = typeof responseStatus === 'number' ? responseStatus : null;
+        if (activityId) await safeMonitoringWrite('email failed', () => updateEmailAttempt(activityId!, {
+          delivery_status: 'failed', failure_code: providerFailureCode, provider_response_status: providerResponseStatus,
+        }));
+        return false;
+      }
+    };
+
+    // Try configured providers in the same order as before.
     if (hasResend) {
-      try {
-        await sendEmailViaResend(email, subject, html);
-        return NextResponse.json({ ok: true, message: 'Code sent to your email' });
-      } catch (resendError: any) {
-        console.error('[Send-OTP] Resend error:', resendError?.message);
-        if (!hasSmtp && process.env.NODE_ENV === 'production') {
-          throw new Error(`Email sending failed: ${resendError?.message || 'Resend error'}`);
-        }
-      }
+      if (await tryProvider('resend')) return NextResponse.json({ ok: true, message: 'Code sent to your email' });
     }
 
-    // 2. Try SMTP if configured
     if (hasSmtp) {
-      try {
-        await sendEmailViaSmtp(email, subject, html);
-        return NextResponse.json({ ok: true, message: 'Code sent to your email' });
-      } catch (smtpError: any) {
-        console.error('[Send-OTP] SMTP error:', smtpError?.message);
-        if (process.env.NODE_ENV === 'production') {
-          throw new Error(`Email sending failed: ${smtpError?.message || 'SMTP error'}`);
-        }
-      }
+      if (await tryProvider('smtp')) return NextResponse.json({ ok: true, message: 'Code sent to your email' });
     }
 
-    // 3. Fallback for local development or when credentials aren't set yet
-    console.log(`\n====================================================`);
-    console.log(`[OTP SERVICE - LOCAL DEV / FALLBACK]`);
-    console.log(`Recipient: ${name} <${email}>`);
-    console.log(`👉 YOUR OTP CODE IS: [ ${code} ]`);
-    console.log(`Expires in 5 minutes (${expiresAt.toLocaleTimeString()})`);
-    console.log(`====================================================\n`);
-
-    if (process.env.NODE_ENV !== 'production' || (!hasResend && !hasSmtp)) {
+    if (process.env.NODE_ENV !== 'production' && !hasResend && !hasSmtp) {
+      await safeMonitoringWrite('local OTP generated', () => updateOtpActivity(requestId, {
+        email_status: 'unknown', request_status: 'accepted', email_failure_code: null,
+      }));
       return NextResponse.json({
-        ok: true,
-        devMode: !hasResend && !hasSmtp,
+        ok: true, devMode: true,
         devOtp: code,
-        message: 'Verification code generated! (Dev mode: logged to console)',
+        message: 'Verification code generated for local development.',
       });
     }
 
-    throw new Error('Email service not configured. Please add RESEND_API_KEY or SMTP credentials in .env.local');
+    await safeMonitoringWrite('OTP email failure', () => updateOtpActivity(requestId, {
+      email_status: 'failed', request_status: 'failed', email_failure_code: providerFailureCode,
+    }));
+    return NextResponse.json({ ok: false, error: 'Email could not be sent. Please try again later.' }, { status: 503 });
   } catch (err: any) {
-    const message = err?.message || 'Failed to send OTP';
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    if (err instanceof z.ZodError) return NextResponse.json({ ok: false, error: 'Enter a valid name and email address.' }, { status: 400 });
+    console.error('[Send-OTP] Request failed');
+    return NextResponse.json({ ok: false, error: 'Could not request a verification code. Please try again.' }, { status: 500 });
   }
 }
 

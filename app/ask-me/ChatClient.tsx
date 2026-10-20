@@ -218,7 +218,15 @@ function FormattedContent({ content }: { content: string }) {
 }
 
 function renderInlineFormatting(text: string): string {
-  return text
+  const escapedText = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  return escapedText
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi, '<a class="text-cyan-300 underline underline-offset-2 hover:text-cyan-200" href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
     .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded-md bg-slate-800 text-cyan-200 font-mono text-xs sm:text-sm border border-slate-700 font-medium">$1</code>')
     .replace(/\n/g, '<br/>');
@@ -315,8 +323,8 @@ export default function ChatClient() {
     };
   }, [theme]);
 
-  // Resize the chat for the visible area above the mobile keyboard without
-  // moving the fixed app shell when Safari pans the visual viewport on focus.
+  // Keep the fixed chat shell aligned to Safari's visible viewport when the
+  // keyboard opens. iOS can both resize and pan the visual viewport on focus.
   useEffect(() => {
     const viewport = window.visualViewport;
     const root = document.documentElement;
@@ -326,6 +334,7 @@ export default function ChatClient() {
 
       const keyboardIsOpen = window.innerHeight - viewport.height > 120;
       root.style.setProperty('--askme-viewport-height', `${viewport.height}px`);
+      root.style.setProperty('--askme-viewport-offset-top', `${viewport.offsetTop}px`);
       root.style.setProperty(
         '--askme-footer-safe-bottom',
         keyboardIsOpen ? '0px' : 'env(safe-area-inset-bottom)',
@@ -334,12 +343,15 @@ export default function ChatClient() {
 
     syncVisibleViewport();
     viewport?.addEventListener('resize', syncVisibleViewport);
+    viewport?.addEventListener('scroll', syncVisibleViewport);
     window.addEventListener('resize', syncVisibleViewport);
 
     return () => {
       viewport?.removeEventListener('resize', syncVisibleViewport);
+      viewport?.removeEventListener('scroll', syncVisibleViewport);
       window.removeEventListener('resize', syncVisibleViewport);
       root.style.removeProperty('--askme-viewport-height');
+      root.style.removeProperty('--askme-viewport-offset-top');
       root.style.removeProperty('--askme-footer-safe-bottom');
     };
   }, []);
@@ -428,15 +440,25 @@ export default function ChatClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: activeConversationId,
+          requestId: createUuid(),
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => null);
+      const reply = res.status === 401
+        ? 'Your chat session has expired. Please sign in again to continue.'
+        : res.status === 503
+          ? 'The chat service is temporarily unavailable. Please try again shortly.'
+          : res.status === 400
+            ? 'I could not process that message. It may be too long; please shorten it and try again.'
+            : res.ok && json?.ok === true && typeof json.reply === 'string' && json.reply.trim()
+              ? json.reply
+              : 'I could not get a reply from the chat service. Please try again.';
       const assistantMsg: Message = {
         id: createMessageId(),
         role: 'assistant',
-        content: json.reply || 'I am right here with you. Feel free to ask me anything about my journey!',
+        content: reply,
         modelUsed: json.model_used || 'GPT-4o RAG',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -448,7 +470,7 @@ export default function ChatClient() {
         {
           id: createMessageId(),
           role: 'assistant',
-          content: 'Hey, I hit a brief connection hiccup retrieving my memory. Please ask again in just a moment!',
+          content: 'The connection ended before I received a reply. Your message may appear in the transcript without an assistant answer. Please retry your question.',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -491,6 +513,7 @@ export default function ChatClient() {
       className={`askme-shell theme-${theme} font-plus-jakarta fixed left-0 right-0 top-0 z-0 flex h-[100dvh] w-full flex-col overflow-hidden overscroll-none bg-slate-50 font-sans text-slate-900 dark:bg-[#030712] dark:text-slate-100`}
       style={{
         height: 'var(--askme-viewport-height, 100dvh)',
+        top: 'var(--askme-viewport-offset-top, 0px)',
       }}
     >
       {/* Bright, full-page neural mind backdrop */}
@@ -512,7 +535,9 @@ export default function ChatClient() {
         className="pointer-events-none absolute inset-0 z-0 sm:hidden"
         style={{
           backgroundImage:
-            `${theme === 'dark' ? 'linear-gradient(rgba(3, 7, 18, 0.58), rgba(3, 7, 18, 0.76))' : 'linear-gradient(rgba(248, 250, 252, 0.52), rgba(248, 250, 252, 0.76))'}, url('https://cdn.21st.dev/assets/mirror/fe/fe93bc0812d60130c9eef6d68e02fa99ded883248049a9107bfb64dbd37fae34.jpg')`,
+            theme === 'dark'
+              ? "linear-gradient(rgba(3, 7, 18, 0.58), rgba(3, 7, 18, 0.76)), url('https://cdn.21st.dev/assets/mirror/fe/fe93bc0812d60130c9eef6d68e02fa99ded883248049a9107bfb64dbd37fae34.jpg')"
+              : 'radial-gradient(ellipse at 18% 18%, rgba(125, 211, 252, 0.30), transparent 42%), radial-gradient(ellipse at 88% 68%, rgba(196, 181, 253, 0.24), transparent 42%), linear-gradient(155deg, #f8fafc 0%, #eef5f8 52%, #f6f3fb 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -829,7 +854,7 @@ export default function ChatClient() {
             </button>
           </div>
           <p className="askme-muted mt-2 px-2 text-xs text-slate-500">
-            Messages stay on this page while it is open and are not saved for later.
+            Conversations and the email used to sign in may be stored for review and service improvement.
           </p>
 
         </div>
