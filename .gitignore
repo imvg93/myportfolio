@@ -39,3 +39,6 @@ __pycache__/
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Private source material that contains relatives' personal details
+/family_background_private.json

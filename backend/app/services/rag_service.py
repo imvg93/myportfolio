@@ -5,6 +5,20 @@ from ..config import settings
 
 logger = logging.getLogger(__name__)
 
+# Never return records containing the owner's father-related personal history,
+# including IDs that may remain in older Pinecone indexes with stale metadata.
+OWNER_PRIVATE_FAMILY_SOURCE_IDS = {
+    "v2_private_family_history",
+    "v2_private_emotional_reactions",
+    "owner_restricted_family_history",
+    "owner_restricted_emotional_reactions",
+    "girish_qa_027",
+    "family_background_raw_private_20261020",
+    "bio_002",
+    "bio_003",
+    "detail_family_private",
+}
+
 
 def to_single_vector(raw_embedding: Any) -> List[float]:
     """Convert HF token-level matrix or raw vector into a single 1D sentence embedding."""
@@ -83,7 +97,12 @@ class RAGService:
                 vector=vector,
                 top_k=top_k,
                 include_metadata=True,
-                filter={"visibility": {"$eq": "public"}}
+                filter={
+                    "$and": [
+                        {"visibility": {"$eq": "public"}},
+                        {"source_id": {"$nin": sorted(OWNER_PRIVATE_FAMILY_SOURCE_IDS)}},
+                    ]
+                }
             )
 
             matches = query_res.get("matches", []) if isinstance(query_res, dict) else getattr(query_res, "matches", [])

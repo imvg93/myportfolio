@@ -8,6 +8,7 @@ import { ensureChatConversation, recordChatMessage } from '@/lib/monitoring';
 
 let mockOpenAiShouldFail = false;
 let mockCurrentSearchShouldFail = false;
+let mockSuggestionsPayload: unknown = null;
 
 jest.mock('@/lib/auth-session', () => ({
   getAuthSession: jest.fn(),
@@ -29,9 +30,12 @@ jest.mock('@/lib/pinecone-retrieval', () => ({ retrievePortfolioContext: jest.fn
 jest.mock('openai', () => ({
   __esModule: true,
   default: jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: jest.fn().mockImplementation(() => {
+    chat: { completions: { create: jest.fn().mockImplementation((request: { response_format?: unknown }) => {
       if (mockOpenAiShouldFail) return Promise.reject(new Error('provider unavailable'));
-      return Promise.resolve({ choices: [{ message: { content: 'OpenAI reply' } }], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } });
+      const content = request?.response_format
+        ? mockSuggestionsPayload === null ? null : JSON.stringify(mockSuggestionsPayload)
+        : 'OpenAI reply';
+      return Promise.resolve({ choices: [{ message: { content } }], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } });
     }) } },
     responses: { create: jest.fn().mockImplementation(() => {
       if (mockCurrentSearchShouldFail) return Promise.reject(new Error('web search unavailable'));
@@ -59,7 +63,7 @@ function chatRequest(cookie?: string, payload?: unknown) {
 describe('/api/chat monitoring', () => {
   const originalOpenAiKey = process.env.OPENAI_API_KEY;
   beforeEach(() => {
-    jest.clearAllMocks(); mockOpenAiShouldFail = false; mockCurrentSearchShouldFail = false; delete process.env.OPENAI_API_KEY;
+    jest.clearAllMocks(); mockOpenAiShouldFail = false; mockCurrentSearchShouldFail = false; mockSuggestionsPayload = null; delete process.env.OPENAI_API_KEY;
     (getAuthSession as jest.Mock).mockResolvedValue({ email: 'visitor@example.com', name: 'Visitor' });
     (ensureChatConversation as jest.Mock).mockResolvedValue(true);
     (recordChatMessage as jest.Mock).mockResolvedValue(undefined);
@@ -75,10 +79,93 @@ describe('/api/chat monitoring', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ ok: true, reply: 'OpenAI reply' });
     expect(retrievePortfolioContext).toHaveBeenCalledWith('What have you built?');
-    expect(buildPortfolioSystemPrompt).toHaveBeenCalledWith('Approved public profile context');
+    expect(buildPortfolioSystemPrompt).toHaveBeenCalledWith('Approved public profile context', {
+      includeVerifiedChatArchitecture: false,
+    });
     expect(recordChatMessage).toHaveBeenCalledTimes(2);
     expect(recordChatMessage).toHaveBeenNthCalledWith(1, expect.objectContaining({ role: 'user', content: 'What have you built?', generationStatus: 'received' }));
-    expect(recordChatMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({ role: 'assistant', content: 'OpenAI reply', generationStatus: 'succeeded', totalTokens: 15 }));
+    expect(recordChatMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({ role: 'assistant', content: 'OpenAI reply', generationStatus: 'succeeded', totalTokens: 30 }));
+  });
+
+  it('uses recent conversation context to retrieve evidence for a project follow-up', async () => {
+    process.env.OPENAI_API_KEY = 'test-openai-key';
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`, {
+      conversationId,
+      requestId,
+      messages: [
+        { role: 'user', content: 'Explain your AI portfolio project and its architecture.' },
+        { role: 'assistant', content: 'The assistant uses retrieval over portfolio records.' },
+        { role: 'user', content: 'What database does it use?' },
+      ],
+    }));
+    expect(response.status).toBe(200);
+    expect(retrievePortfolioContext).toHaveBeenCalledWith(expect.stringContaining('Explain your AI portfolio project'));
+    expect(retrievePortfolioContext).toHaveBeenCalledWith(expect.stringContaining('Current visitor question: What database does it use?'));
+    expect(buildPortfolioSystemPrompt).toHaveBeenCalledWith('Approved public profile context', {
+      includeVerifiedChatArchitecture: true,
+    });
+  });
+
+  it('keeps suggestions on the personal topic and filters mismatched categories', async () => {
+    process.env.OPENAI_API_KEY = 'test-openai-key';
+    mockSuggestionsPayload = {
+      activeTopic: 'personal_background_and_interests',
+      suggestions: [
+        { topic: 'personal_background_and_interests', question: 'What motivates him?' },
+        { topic: 'technical_skills_and_technologies', question: 'Which technologies does he use?' },
+      ],
+    };
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`, {
+      conversationId,
+      requestId,
+      messages: [{ role: 'user', content: 'Tell me about your personal background.' }],
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      suggestions: ['What motivates him?'],
+    });
+  });
+
+  it('preserves the active topic for short follow-ups such as "what else?"', async () => {
+    process.env.OPENAI_API_KEY = 'test-openai-key';
+    mockSuggestionsPayload = {
+      activeTopic: 'hobbies_and_lifestyle',
+      suggestions: [
+        { topic: 'hobbies_and_lifestyle', question: 'What other interests does he have?' },
+        { topic: 'education_and_learning', question: 'Where did he study?' },
+      ],
+    };
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`, {
+      conversationId,
+      requestId,
+      messages: [
+        { role: 'user', content: 'What do you like doing in your free time?' },
+        { role: 'assistant', content: 'He enjoys several activities.' },
+        { role: 'user', content: 'What else?' },
+      ],
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      suggestions: ['What other interests does he have?'],
+    });
+    expect(retrievePortfolioContext).toHaveBeenCalledWith(expect.stringContaining('Current visitor question: What else?'));
+  });
+
+  it('continues answering general knowledge questions', async () => {
+    process.env.OPENAI_API_KEY = 'test-openai-key';
+    const response = await POST(chatRequest(`verified_session=${'a'.repeat(43)}`, {
+      conversationId,
+      requestId,
+      messages: [{ role: 'user', content: 'What is artificial intelligence?' }],
+    }));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, reply: 'OpenAI reply' });
+    expect(retrievePortfolioContext).toHaveBeenCalledWith('What is artificial intelligence?');
+    expect(buildPortfolioSystemPrompt).toHaveBeenCalledWith('Approved public profile context', {
+      includeVerifiedChatArchitecture: false,
+    });
   });
 
   it('records a failed assistant response if OpenAI is unavailable', async () => {
@@ -124,7 +211,7 @@ describe('/api/chat monitoring', () => {
     expect(body.reply).toContain('The current answer is supported by search.');
     expect(body.reply).toContain('[Official source](https://example.com/current)');
     expect(recordChatMessage).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      role: 'assistant', generationStatus: 'succeeded', model: 'gpt-4.1', totalTokens: 20,
+      role: 'assistant', generationStatus: 'succeeded', model: 'gpt-4.1', totalTokens: 35,
     }));
   });
 

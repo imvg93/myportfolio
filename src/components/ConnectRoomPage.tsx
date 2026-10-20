@@ -84,7 +84,7 @@ const socialMediaItems = [
     direction: "left" as const,
     name: "LinkedIn",
     icon: Linkedin,
-    url: "https://www.linkedin.com/in/girish-veeranki-581979244/", // Replace with your LinkedIn username
+    url: "https://www.linkedin.com/in/girishveeranki/",
     color: "#0077B5",
   },
 ];

@@ -17,6 +17,49 @@ const BodySchema = z.object({
   ).min(1),
 });
 
+const SUGGESTION_TOPICS = [
+  'personal_background_and_interests',
+  'family_and_personal_life',
+  'hobbies_and_lifestyle',
+  'education_and_learning',
+  'professional_experience_and_career',
+  'technical_skills_and_technologies',
+  'projects_and_product_development',
+  'ai_ml_and_architecture',
+  'business_and_entrepreneurship',
+  'career_opportunities_and_hiring',
+  'contact_and_professional_networking',
+  'general_conversation_and_small_talk',
+  'general_knowledge',
+  'other_or_unknown',
+] as const;
+
+const FollowUpSuggestionsSchema = z.object({
+  activeTopic: z.enum(SUGGESTION_TOPICS),
+  suggestions: z.array(z.object({
+    topic: z.enum(SUGGESTION_TOPICS),
+    question: z.string().trim().min(5).max(160),
+  }).strict()).max(4),
+}).strict();
+
+const FOLLOW_UP_SUGGESTION_INSTRUCTIONS = `Generate a JSON object with an "activeTopic" and a "suggestions" array of zero to four objects. Each suggestion object has a "topic" and a concise "question". Topic values must be one of: ${SUGGESTION_TOPICS.join(', ')}. These topic labels are internal and are not shown to the visitor.
+
+First determine the visitor's active topic from the latest user message and recent conversation. If the latest message is a follow-up such as "what else?", "why?", "tell me more", "what about that?", or a pronoun/reference, preserve the topic being discussed. If they clearly introduce a new subject, switch to it. Use the assistant's latest answer to understand what was covered. Do not assume every visitor wants career, education, hiring, or technical information.
+
+Suggest only natural next questions that stay within activeTopic and are useful, distinct continuations of the current answer. Tag each question with its actual topic. Never include a suggestion whose topic differs from activeTopic. Return fewer suggestions or an empty array if there are not enough relevant, answerable questions; relevance matters more than count. For general conversation, use short, natural prompts rather than forcing a portfolio topic.
+
+For Gireesh-related questions, suggestions must be answerable from the supplied approved portfolio context. Never invent or assume skills, projects, responsibilities, experience, availability, private facts, or achievements. Personal questions may only use information explicitly present in the approved context. Never suggest questions about Gireesh's father, his passing, or related family history, even if those topics appear in the conversation. Do not suggest another person's social profile, contact details, username, or account ID. Do not repeat earlier user questions or questions already answered. Do not include answers, markdown, or generic invitations; output only the JSON object.`;
+
+function normalizeQuestion(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function cleanSuggestion(value: string) {
+  const question = value.trim().replace(/^(?:[-*•]|\d+[.)])\s*/, '').replace(/^['"“”]+|['"“”]+$/g, '').replace(/\s+/g, ' ');
+  if (!question) return '';
+  return `${question.replace(/[.!?]+$/, '')}?`;
+}
+
 function removeGenericClosingInvitation(reply: string) {
   return reply
     .replace(
@@ -31,6 +74,55 @@ function needsCurrentInformationSearch(question: string) {
   const timeWords = /\b(current(?:ly)?|latest|recent(?:ly)?|today|tonight|this week|this month|this year|right now|as of|breaking|news|update|upcoming)\b/;
   const changingTopics = /\b(pres\w{2,10}|prime\s*minist\w*|chief minister|governor|mayor|ceo|weather|stock|share price|exchange rate|election|won|score|ranking|price|version|release date)\b/;
   return timeWords.test(normalized) || changingTopics.test(normalized);
+}
+
+function buildRetrievalQuery(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
+  let latestUserIndex = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === 'user') {
+      latestUserIndex = index;
+      break;
+    }
+  }
+  if (latestUserIndex < 0) return '';
+
+  const latestQuestion = messages[latestUserIndex].content.trim();
+  const recentContext = messages
+    .slice(0, latestUserIndex)
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .slice(-4)
+    .map((message) => `${message.role === 'assistant' ? 'Assistant' : 'Visitor'}: ${message.content.trim().slice(0, 800)}`);
+
+  if (!recentContext.length) return latestQuestion;
+  return `${recentContext.join('\n')}\nCurrent visitor question: ${latestQuestion}`;
+}
+
+function isAboutPortfolioAiProject(question: string) {
+  return /\b(?:ai portfolio|portfolio ai|portfolio chatbot|portfolio assistant|ai chatbot|ai assistant|chat assistant|rag|semantic retrieval|embedding pipeline|ai project|chatbot architecture)\b/i.test(question);
+}
+
+function getSocialProfilePolicyReply(question: string): string | null {
+  const normalized = question.toLowerCase().replace(/[’]/g, "'");
+  const platform = /\b(linkedin|linked\s*in|github|instagram|facebook|twitter|x\.com|threads|tiktok)\b/i;
+  const hasPlatform = platform.test(normalized);
+  const asksForProfile = hasPlatform && (
+    /\b(profile|url|website|link|username|handle|account|id)\b/i.test(normalized)
+    || /\b(?:my|your|his|her|their|someone'?s|president'?s)\s+(?:linkedin|linked\s*in|github|instagram|facebook|twitter|x\.com|threads|tiktok)\b/i.test(normalized)
+    || /\b[a-z][a-z0-9._-]*'s\s+(?:linkedin|linked\s*in|github|instagram|facebook|twitter|x\.com|threads|tiktok)\b/i.test(normalized)
+    || /\b(?:girish|gireesh)\s+(?:linkedin|linked\s*in)\b/i.test(normalized)
+    || /\b(?:linkedin|linked\s*in|github|instagram|facebook|twitter|x\.com|threads|tiktok)\b.{0,40}\b(?:of|for)\b/i.test(normalized)
+  );
+  if (!asksForProfile) return null;
+
+  const asksForOwnerLinkedIn = /\b(linkedin|linked\s*in)\b/i.test(normalized)
+    && (/\b(my|your|girish|gireesh)(?:'s)?\s+(?:linkedin|linked\s*in)\b/i.test(normalized)
+      || /\b(?:linkedin|linked\s*in)\b.{0,20}\b(?:of|for)\s+(?:me|girish|gireesh)\b/i.test(normalized))
+    && !/\bmy\s+(?:friend|colleague|brother|sister|manager|teacher|classmate)'?s?\b/i.test(normalized);
+  if (asksForOwnerLinkedIn) {
+    return "Gireesh's LinkedIn profile: https://www.linkedin.com/in/girishveeranki/";
+  }
+
+  return "I can answer general questions, but I can’t provide or guess another person’s social profile or account details.";
 }
 
 function getWebCitations(response: {
@@ -98,24 +190,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'The message could not be saved. Please retry.' }, { status: 503 });
     }
     const openAiKey = process.env.OPENAI_API_KEY;
-    let reply = '';
-    let generationStatus: 'succeeded' | 'failed' = 'failed';
-    let errorCode = 'provider_unavailable';
+    const socialProfilePolicyReply = getSocialProfilePolicyReply(userMessage.content);
+    let reply = socialProfilePolicyReply ?? '';
+    let suggestions: string[] = [];
+    let generationStatus: 'succeeded' | 'failed' = socialProfilePolicyReply ? 'succeeded' : 'failed';
+    let errorCode = socialProfilePolicyReply ? '' : 'provider_unavailable';
     let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
-    let responseModel: string | null = openAiKey ? 'gpt-4o' : null;
+    let responseModel: string | null = socialProfilePolicyReply ? 'application-policy' : openAiKey ? 'gpt-4o' : null;
 
-    if (openAiKey) {
+    if (openAiKey && !socialProfilePolicyReply) {
       try {
+        const retrievalQuery = buildRetrievalQuery(messages);
+        const includeVerifiedChatArchitecture = isAboutPortfolioAiProject(retrievalQuery);
         let context = '';
         try {
-          context = await retrievePortfolioContext(userMessage.content);
+          context = await retrievePortfolioContext(retrievalQuery);
         } catch {
           console.error('Could not retrieve portfolio context from Pinecone');
         }
 
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: openAiKey });
-        const systemPrompt = buildPortfolioSystemPrompt(context);
+        const systemPrompt = buildPortfolioSystemPrompt(context, {
+          includeVerifiedChatArchitecture,
+        });
         let generatedReply = '';
         if (needsCurrentInformationSearch(userMessage.content)) {
           try {
@@ -172,6 +270,69 @@ export async function POST(req: Request) {
         if (reply) {
           generationStatus = 'succeeded';
           errorCode = '';
+
+          try {
+            const suggestionResponse = await openai.chat.completions.create({
+              model: responseModel || 'gpt-4o',
+              temperature: 0.4,
+              max_tokens: 300,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: FOLLOW_UP_SUGGESTION_INSTRUCTIONS },
+                {
+                  role: 'user',
+                  content: JSON.stringify({
+                    latestQuestion: userMessage.content,
+                    recentConversation: messages
+                      .filter((message) => message.role !== 'system')
+                      .slice(-10)
+                      .map(({ role, content }) => ({ role, content: content.slice(0, 1000) })),
+                    previousUserQuestions: messages
+                      .filter((message) => message.role === 'user')
+                      .slice(-20)
+                      .map((message) => message.content.slice(0, 300)),
+                    assistantAnswer: reply.slice(0, 5000),
+                    portfolioContext: context.slice(0, 10000),
+                  }),
+                },
+              ],
+            });
+
+            const suggestionText = suggestionResponse.choices[0]?.message?.content;
+            if (suggestionText) {
+              const parsedSuggestions = FollowUpSuggestionsSchema.safeParse(JSON.parse(suggestionText));
+              if (parsedSuggestions.success) {
+                const previousQuestions = new Set(
+                  messages
+                    .filter((message) => message.role === 'user')
+                    .map((message) => normalizeQuestion(message.content)),
+                );
+                const uniqueSuggestions = new Map<string, string>();
+                for (const candidate of parsedSuggestions.data.suggestions) {
+                  // Enforce the generator's active topic in code as a final
+                  // guard against a plausible but unrelated suggestion.
+                  if (candidate.topic !== parsedSuggestions.data.activeTopic) continue;
+                  const suggestion = cleanSuggestion(candidate.question);
+                  const normalized = normalizeQuestion(suggestion);
+                  if (suggestion && normalized && !previousQuestions.has(normalized) && !uniqueSuggestions.has(normalized)) {
+                    uniqueSuggestions.set(normalized, suggestion);
+                  }
+                }
+                suggestions = Array.from(uniqueSuggestions.values()).slice(0, 4);
+              }
+            }
+
+            if (suggestionResponse.usage) {
+              usage = {
+                prompt_tokens: (usage?.prompt_tokens ?? 0) + (suggestionResponse.usage.prompt_tokens ?? 0),
+                completion_tokens: (usage?.completion_tokens ?? 0) + (suggestionResponse.usage.completion_tokens ?? 0),
+                total_tokens: (usage?.total_tokens ?? 0) + (suggestionResponse.usage.total_tokens ?? 0),
+              };
+            }
+          } catch {
+            // Suggestions are an enhancement; preserve a successful answer if generation fails.
+            console.error('[chat] Follow-up suggestion generation failed');
+          }
         }
       } catch {
         console.error('OpenAI chat request failed');
@@ -191,7 +352,7 @@ export async function POST(req: Request) {
         role: 'assistant', content: reply, generationStatus,
         durationMs: Date.now() - startedAt,
         ...(generationStatus === 'failed' ? { errorCode } : {}),
-        provider: openAiKey ? 'openai' : 'none', model: responseModel,
+        provider: socialProfilePolicyReply ? 'application-policy' : openAiKey ? 'openai' : 'none', model: responseModel,
         promptTokens: usage?.prompt_tokens, completionTokens: usage?.completion_tokens, totalTokens: usage?.total_tokens,
       });
     } catch {
@@ -199,7 +360,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'The reply could not be saved. Please retry.' }, { status: 503 });
     }
 
-    return NextResponse.json({ ok: true, reply });
+    return NextResponse.json({ ok: true, reply, suggestions });
   } catch (error) {
     if (error instanceof z.ZodError || error instanceof SyntaxError) return NextResponse.json({ ok: false, error: 'Invalid chat request.' }, { status: 400 });
     console.error('Chat request failed');

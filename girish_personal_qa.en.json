@@ -1,0 +1,248 @@
+{
+  "document_title": "Girish — Personal Knowledge Base Q&A Draft",
+  "language": "en",
+  "record_type": "question_and_answer",
+  "sharing_note": "All entries are set to public at the owner’s request. Entries marked as needing confirmation contain details that may need spelling, date, or relationship clarification.",
+  "entries": [
+    {
+      "id": "girish_qa_001",
+      "category": "Identity",
+      "question": "What name should I use for you?",
+      "answer": "My name is Girish. The exact English spelling of my full name has not been confirmed yet.",
+      "visibility": "public",
+      "status": "owner_provided_needs_spelling_confirmation"
+    },
+    {
+      "id": "girish_qa_002",
+      "category": "Early life",
+      "question": "Where were you born, and where did you grow up?",
+      "answer": "I was born in Vijayawada, Andhra Pradesh, and moved to Hyderabad soon after I was born. I spent about nine years studying in Hyderabad before moving to Machilipatnam after fourth standard.",
+      "visibility": "public",
+      "status": "owner_provided"
+    },
+    {
+      "id": "girish_qa_003",
+      "category": "Education",
+      "question": "Where did you study in Hyderabad?",
+      "answer": "I studied in Hyderabad through fourth standard at a campus in KPHB. I referred to the campus name as “Scotdale”; its correct English spelling still needs confirmation.",
+      "visibility": "public",
+      "status": "owner_provided_needs_school_name_confirmation"
+    },
+    {
+      "id": "girish_qa_004",
+      "category": "Early life",
+      "question": "Why did you move to Machilipatnam?",
+      "answer": "After fourth standard, I had to move to Machilipatnam because of some personal circumstances. I continued my studies while staying near my maternal grandmother’s home.",
+      "visibility": "public",
+      "status": "owner_provided"
+    },
+    {
+      "id": "girish_qa_005",
+      "category": "Education",
+      "question": "Which schools did you attend in Machilipatnam?",
+      "answer": "I studied at Balaji Vidyalayam from fifth through eighth standard. I later moved to Sri Chaitanya School for tenth standard. I have not yet specified where I studied in ninth standard.",
+      "visibility": "public",
+      "status": "owner_provided_with_missing_detail"
+    },
+    {
+      "id": "girish_qa_006",
+      "category": "Education",
+      "question": "Where did you complete Intermediate?",
+      "answer": "I completed Intermediate at Sri Chaitanya Junior College.",
+      "visibility": "public",
+      "status": "owner_provided"
+    },
+    {
+      "id": "girish_qa_007",
+      "category": "Education",
+      "question": "How did you get into engineering?",
+      "answer": "After Intermediate, I took the EAMCET entrance exam, earned a rank, and secured an engineering seat. I have not yet shared my rank or the year I took the exam.",
+      "visibility": "public",
+      "status": "owner_provided_with_missing_details"
+    },
+    {
+      "id": "girish_qa_008",
+      "category": "Education",
+      "question": "What did you study for your BTech degree?",
+      "answer": "I completed a BTech in Electronics and Communication Engineering at NRI Institute of Technology. I had originally planned to study Computer Science, but I joined Electronics and Communication Engineering instead.",
+      "visibility": "public",
+      "status": "owner_provided"
+    },
+    {
+      "id": "girish_qa_009",
+      "category": "Education",
+      "question": "What was your final BTech score?",
+      "answer": "I completed my BTech with a score of 6.5. I have not yet confirmed whether this refers to my CGPA or another scoring measure.",
+      "visibility": "public",
+      "status": "owner_provided_needs_score_clarification"
+    },
+    {
+      "id": "girish_qa_010",
+      "category": "Technical background",
+      "question": "How would you describe your technical background?",
+      "answer": "I describe my background as fully technical, with experience across IT, software development, and cloud architecture. I have not yet listed the specific technologies, projects, or proficiency levels that support this description.",
+      "visibility": "public",
+      "status": "owner_self_description_needs_examples"
+    },
+    {
+      "id": "girish_qa_011",
+      "category": "Personal profile",
+      "question": "Where are you based now?",
+      "answer": "I am based in Hyderabad and sometimes travel to Machilipatnam, where members of my family live.",
+      "visibility": "public",
+      "status": "owner_provided"
+    },
+    {
+      "id": "girish_qa_012",
+      "category": "Personal story",
+      "question": "What personal story from your college years did you share?",
+      "answer": "During my BTech years, I had strong feelings for someone and used the nickname “Mandy Salena Celina” for her. I told her how I felt on September 4, but she did not feel the same way. I have not specified the year.",
+      "visibility": "public",
+      "status": "owner_provided_sensitive_year_unspecified"
+    },
+    {
+      "id": "girish_qa_013",
+      "category": "Personal story",
+      "question": "What does the nickname “Mandy Salena Celina” mean?",
+      "answer": "I said the nickname has a meaning, but I have not shared the meaning yet.",
+      "visibility": "public",
+      "status": "awaiting_owner_details"
+    },
+    {
+      "id": "girish_qa_014",
+      "category": "Family",
+      "question": "Which family members live in Machilipatnam and Hyderabad?",
+      "answer": "I mentioned that some family members live in Machilipatnam and that I stay with family in Hyderabad. I have not yet clarified the exact relationships or living arrangements.",
+      "visibility": "public",
+      "status": "awaiting_owner_clarification"
+    },
+    {
+      "id": "girish_qa_015",
+      "category": "Education",
+      "question": "When did you complete school and Intermediate?",
+      "answer": "I completed school in 2018 and Intermediate at Sri Chaitanya Junior College from 2018 to 2020.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_016",
+      "category": "Education",
+      "question": "When did you begin and complete your BTech?",
+      "answer": "The COVID-19 pandemic affected my plans, so I joined BTech in 2021. I studied Electronics and Communication Engineering at NRI Institute of Technology from 2021 to 2024.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_017",
+      "category": "Career",
+      "question": "Where did you start your IT career?",
+      "answer": "Around late 2024 or early 2025, I joined Datavalley as an intern at a company I described as a U-Tech company. The exact company name and spelling need confirmation.",
+      "status": "owner_provided_needs_company_name_confirmation",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_018",
+      "category": "Career",
+      "question": "Was your internship paid, and how long did it last?",
+      "answer": "My internship was unpaid, and I worked there for six months.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_019",
+      "category": "Career",
+      "question": "What happened after your internship?",
+      "answer": "After about six months, I was selected for a next opportunity and continued moving forward in my career. The exact role, employer, and transition details are not yet clear.",
+      "status": "owner_provided_needs_details",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_020",
+      "category": "Career",
+      "question": "What kind of work do you do now?",
+      "answer": "I currently work at an IT startup. I see this job as enough to cover my expenses. I have not yet shared my job title or the company name.",
+      "status": "owner_provided_needs_role_and_company",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_021",
+      "category": "Personal story",
+      "question": "How would you describe your love life?",
+      "answer": "I have experienced one-sided love. I have chosen not to reveal the person’s real name and refer to her by the nickname “Mandy Salena Celina.”",
+      "status": "owner_provided_name_withheld",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_022",
+      "category": "Personal story",
+      "question": "What have you decided about marriage?",
+      "answer": "I have decided that if the person I love marries someone else, I will not get married. This is a personal decision I shared about my one-sided love.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_023",
+      "category": "Personal profile",
+      "question": "How would you describe your social personality?",
+      "answer": "I am an introvert. I feel nervous talking with women and can feel anxious in large groups.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_024",
+      "category": "Personal profile",
+      "question": "What have you shared about your sexual experience?",
+      "answer": "I have not had sexual experience; I describe myself as a virgin.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_025",
+      "category": "Family",
+      "question": "Do you have siblings?",
+      "answer": "I have three older sisters—Teja Veeran, Shalini Veeran, and Barvi Veeran—and one older brother, Neeraj Veeran. The English spellings of their names are based on my pronunciation and may need confirmation.",
+      "status": "owner_provided_needs_name_spelling_confirmation",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_026",
+      "category": "Family",
+      "question": "Where do your siblings live?",
+      "answer": "My sisters and brother are settled abroad. I am the only one among my siblings currently living in India.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_027",
+      "category": "Family",
+      "question": "Do you have other close family members?",
+      "answer": "I have relatives on both my mother’s and father’s sides, and I meet them from time to time. I also mentioned two younger male relatives on my mother’s side, Manoj and Sandeep, whom I want to look after. Their exact relationship to me needs clarification.",
+      "status": "owner_provided_needs_relationship_clarification",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_028",
+      "category": "Daily life",
+      "question": "What does a typical day look like for you?",
+      "answer": "I usually wake up in the morning, get ready, and go to the office. I return around 7 p.m., take care of my work and daily needs, and then go to sleep. Most days follow a similar routine.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_029",
+      "category": "Interests",
+      "question": "What kind of travel do you enjoy?",
+      "answer": "I love travelling, especially trips abroad, and I hope to travel internationally.",
+      "status": "owner_provided",
+      "visibility": "public"
+    },
+    {
+      "id": "girish_qa_030",
+      "category": "Interests",
+      "question": "What are you passionate about?",
+      "answer": "I love technology. I keep up with new releases and take time to check out and learn about new technology.",
+      "status": "owner_provided",
+      "visibility": "public"
+    }
+  ]
+}

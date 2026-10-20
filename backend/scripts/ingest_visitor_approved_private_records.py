@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upsert only the five personal records explicitly approved for public chat retrieval.
+"""Upsert only the three personal records explicitly approved for public chat retrieval.
 
 Safe by default: performs validation only. Pass --apply to write to Supabase.
 Professional approval-queue records are never included.
@@ -18,8 +18,6 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_FILE = ROOT_DIR / "backend" / "data" / "v2_drafts" / "portfolio_data.v2.private.json"
 APPROVED_IDS = {
-    "v2_private_family_history",
-    "v2_private_emotional_reactions",
     "v2_private_relationships_boundaries",
     "v2_private_lifestyle_daily_routine",
     "v2_private_family_financial_vow",
@@ -31,7 +29,7 @@ def main() -> int:
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Upsert the five allowlisted records to Supabase (default is validation only).",
+        help="Upsert the three allowlisted records to Supabase (default is validation only).",
     )
     args = parser.parse_args()
 

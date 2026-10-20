@@ -1,0 +1,128 @@
+{
+  "document_title": "Personal About-Me Profile — Confirmed Facts",
+  "language": "en",
+  "record_type": "question_and_answer",
+  "sharing_note": "Public portfolio profile based on confirmed personal information. Suggested captions and replies, example destinations, and the uncertain Tollywood title were omitted.",
+  "entries": [
+    {
+      "id": "personal_about_001",
+      "category": "Personality",
+      "question": "How does Girish describe his personality?",
+      "answer": "Girish describes himself as ambitious, loyal, funny, introverted, and creative. He says he can be quiet at first and more humorous once he feels comfortable.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_002",
+      "category": "Goals",
+      "question": "What are Girish's career goals?",
+      "answer": "Girish wants to build a successful career in technology and create personal products or start a business.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_003",
+      "category": "Entertainment",
+      "question": "Who are Girish's favorite actors?",
+      "answer": "Girish's favorite actor is Mahesh Babu, and his favorite actress is Nayanthara.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_004",
+      "category": "Entertainment",
+      "question": "What movies does Girish enjoy?",
+      "answer": "Girish lists Titanic as a favorite Hollywood movie. Hindi movies he enjoys include Om Shanti Om, Kabhi Khushi Kabhie Gham, and Zindagi Na Milegi Dobara. The Tollywood title in his source is marked uncertain, so it is not included here.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_005",
+      "category": "Entertainment",
+      "question": "What web series does Girish like?",
+      "answer": "Girish likes the English series Stranger Things and the Telugu series Amrutham. He does not watch Hindi web series.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_006",
+      "category": "Preferences",
+      "question": "What are Girish's favorite colors?",
+      "answer": "Girish's favorite colors are black and orange.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_007",
+      "category": "Fashion",
+      "question": "How would Girish describe his fashion style?",
+      "answer": "Girish prefers a premium, classy style. Brands listed among his preferences include Nike and Adidas for sportswear, Tommy Hilfiger for casual wear, and Emporio Armani, Ralph Lauren, Calvin Klein, Hugo Boss, Lacoste, Gucci, Prada, and Dolce & Gabbana. He lists Nike for shoes and Hublot and Montblanc for watches.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_008",
+      "category": "Food",
+      "question": "What is Girish's favorite food?",
+      "answer": "Girish's favorite food is kaju paneer fried rice.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_009",
+      "category": "Music",
+      "question": "What kind of music does Girish enjoy?",
+      "answer": "Girish enjoys melody music and sometimes listens to pop music.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_010",
+      "category": "Travel",
+      "question": "What kind of trips does Girish like?",
+      "answer": "Girish is interested in international trips and beaches. Destinations listed as examples in the source were suggestions, not confirmed favorite destinations, so they are not stated as preferences here.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_011",
+      "category": "Sports",
+      "question": "What sports does Girish follow or play?",
+      "answer": "Girish enjoys watching cricket and tennis, and he plays cricket and badminton.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_012",
+      "category": "Sports",
+      "question": "Which tennis players does Girish like?",
+      "answer": "Girish lists Novak Djokovic, Jannik Sinner, and Alexander Bublik as his favorite tennis players.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_013",
+      "category": "Activities",
+      "question": "Can Girish swim?",
+      "answer": "Girish attends swimming sessions but has not learned to swim yet.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_014",
+      "category": "Activities",
+      "question": "Can Girish drive?",
+      "answer": "Girish can drive a car and ride a motorbike.",
+      "visibility": "public",
+      "status": "owner-provided"
+    },
+    {
+      "id": "personal_about_015",
+      "category": "Preferences",
+      "question": "What is Girish's dream car and favorite gadget?",
+      "answer": "Girish lists a Bentley as his dream car and PlayStation as his favorite gadget.",
+      "visibility": "public",
+      "status": "owner-provided"
+    }
+  ]
+}

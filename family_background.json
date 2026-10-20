@@ -1,0 +1,197 @@
+{
+  "family": {
+    "description": "This profile provides a respectful overview of the family, including siblings, cousins, parents, education, careers, current locations, and cherished family memories."
+  },
+  "siblings": {
+    "brother": {
+      "name": "Neeraj Veeranki",
+      "relationship": "Brother",
+      "career": {
+        "initial_location": "Hyderabad, India",
+        "profession": "Java Developer",
+        "career_history": "Neeraj began his professional career in Hyderabad as a Java Developer. He later left his IT job and moved to the Netherlands for an on-site opportunity.",
+        "current_location": "Netherlands",
+        "current_status": "Settled in the Netherlands"
+      },
+      "marital_status": "Married",
+      "spouse": {
+        "name": "Himabindu",
+        "relationship": "Sister-in-law"
+      },
+      "children": [
+        {
+          "name": "Aryan",
+          "relationship": "Nephew",
+          "age": 3
+        }
+      ]
+    },
+    "sisters": [
+      {
+        "name": "Teja Veeranki",
+        "relationship": "Sister",
+        "marital_status": "Married",
+        "spouse": {
+          "name": "Pawan Kumar",
+          "relationship": "Brother-in-law"
+        },
+        "children": [
+          {
+            "name": null,
+            "relationship": "Nephew",
+            "gender": "Male",
+            "birth_date": "2026-01",
+            "notes": "Teja Veeranki and Pawan Kumar were blessed with a baby boy in January 2026."
+          }
+        ],
+        "parents": {
+          "father": null,
+          "mother": null,
+          "notes": "Teja's parents' names have not been provided. They are different from the parents of Shalini and Bhargavi."
+        },
+        "education": null,
+        "career": null
+      },
+      {
+        "name": "Shalini Veeranki",
+        "relationship": "Sister",
+        "parents": {
+          "father": "Subrahmanyam Veeranki",
+          "mother": "Varalakshmi Veeranki"
+        },
+        "education": {
+          "undergraduate_location": "India",
+          "postgraduate_education": "Pursued a master's degree abroad"
+        },
+        "career": {
+          "current_location": "United States",
+          "current_status": "Working in the United States"
+        }
+      },
+      {
+        "name": "Bhargavi Veeranki",
+        "relationship": "Sister",
+        "parents": {
+          "father": "Subrahmanyam Veeranki",
+          "mother": "Varalakshmi Veeranki"
+        },
+        "education": {
+          "undergraduate_location": "India",
+          "postgraduate_education": "Pursued a master's degree abroad"
+        },
+        "career": {
+          "current_location": "United States",
+          "current_status": "Working in the United States"
+        }
+      }
+    ]
+  },
+  "extended_family": {
+    "cousins": [
+      {
+        "name": "Harsha Bhargav",
+        "alias": "Harsha",
+        "relationship": "Cousin",
+        "parents": {
+          "father": "Subash Chandra Bose",
+          "mother": "Vijayalakshmi Veeranki"
+        },
+        "education": {
+          "undergraduate_location": "India",
+          "postgraduate_education": "Completed a master's degree in the United States"
+        },
+        "career": {
+          "current_location": "United States",
+          "current_status": "Working in the United States"
+        }
+      },
+      {
+        "name": "Geetha Hanuma",
+        "alias": "Sony",
+        "relationship": "Cousin",
+        "parents": {
+          "father": "Subash Chandra Bose",
+          "mother": "Vijayalakshmi Veeranki"
+        },
+        "education": {
+          "undergraduate_location": "India",
+          "postgraduate_education": "Completed a master's degree in the United States"
+        },
+        "career": {
+          "current_location": "United States",
+          "current_status": "Working in the United States"
+        }
+      }
+    ],
+    "parents_of_cousins": {
+      "father": {
+        "name": "Subash Chandra Bose",
+        "relationship": "Uncle"
+      },
+      "mother": {
+        "name": "Vijayalakshmi Veeranki",
+        "relationship": "Aunt"
+      }
+    }
+  },
+  "family_memories": {
+    "description": "The family shares a close emotional bond, with many cherished memories from childhood and time spent together with relatives.",
+    "memories": [
+      {
+        "title": "Sunday Family Visits",
+        "description": "Regular visits to the cousins' home every Sunday during childhood."
+      },
+      {
+        "title": "Aunt's Home-Cooked Meals",
+        "description": "Vijayalakshmi Veeranki would prepare non-vegetarian curries for the visiting family member."
+      },
+      {
+        "title": "Time Spent with Cousins",
+        "description": "Many happy childhood moments were spent with Harsha Bhargav and Geetha Hanuma."
+      },
+      {
+        "title": "Strong Family Relationships",
+        "description": "These shared experiences created lasting memories and strengthened the emotional bonds within the extended family."
+      }
+    ]
+  },
+  "family_values": [
+    "Love and affection",
+    "Respect for family members and elders",
+    "Strong relationships between siblings and cousins",
+    "Cherished childhood memories",
+    "Maintaining close family connections across different countries"
+  ],
+  "information_not_provided": {
+    "Teja Veeranki": [
+      "Parents' names",
+      "Education history",
+      "Career details",
+      "Current location"
+    ],
+    "Teja Veeranki's son": [
+      "Baby's name",
+      "Exact date of birth"
+    ],
+    "Neeraj Veeranki": [
+      "Current employer",
+      "Exact relocation date"
+    ],
+    "Shalini Veeranki": [
+      "Specific university and degree",
+      "Current employer"
+    ],
+    "Bhargavi Veeranki": [
+      "Specific university and degree",
+      "Current employer"
+    ],
+    "Harsha Bhargav": [
+      "Specific university and degree",
+      "Current employer"
+    ],
+    "Geetha Hanuma": [
+      "Specific university and degree",
+      "Current employer"
+    ]
+  }
+}
