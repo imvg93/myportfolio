@@ -1,4 +1,3 @@
-
 name: Deploy MyPortfolio to AWS ECS
 
 on:
@@ -11,7 +10,6 @@ permissions:
   contents: read
   id-token: write
 
-
 env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: myportfolio
@@ -19,7 +17,6 @@ env:
   ECS_SERVICE: myportfolio-task-service-gy9102vo
   TASK_DEFINITION_FAMILY: myportfolio-task
   CONTAINER_NAME: myportfolio
-
 
 jobs:
   deploy:
@@ -40,17 +37,38 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Inspect task definition architecture
+        id: task-def-info
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEFINITION_FAMILY" \
+            --query taskDefinition \
+            --output json > task-definition.json
+
+          # Detect CPU architecture configured in task definition
+          CPU_ARCH=$(jq -r '.runtimePlatform.cpuArchitecture // "X86_64"' task-definition.json)
+          echo "Detected ECS Task CPU Architecture: $CPU_ARCH"
+          if [ "$CPU_ARCH" = "ARM64" ]; then
+            PLATFORM="linux/arm64"
+          else
+            PLATFORM="linux/amd64"
+          fi
+          echo "docker-platform=$PLATFORM" >> "$GITHUB_OUTPUT"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push ARM64 Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/arm64
+          platforms: ${{ steps.task-def-info.outputs.docker-platform }}
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
@@ -61,11 +79,6 @@ jobs:
           set -euo pipefail
 
           IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:${GITHUB_SHA}"
-
-          aws ecs describe-task-definition \
-            --task-definition "$TASK_DEFINITION_FAMILY" \
-            --query taskDefinition \
-            --output json > task-definition.json
 
           jq --arg IMAGE "$IMAGE_URI" --arg NAME "$CONTAINER_NAME" '
             del(
@@ -104,10 +117,41 @@ jobs:
           aws ecs update-service \
             --cluster "$ECS_CLUSTER" \
             --service "$ECS_SERVICE" \
-            --task-definition "${{ steps.task-def.outputs.task-definition-arn }}"
+            --task-definition "${{ steps.task-def.outputs.task-definition-arn }}" \
+            --force-new-deployment
 
       - name: Wait for ECS service stability
         run: |
+          set +e
+          echo "Waiting for ECS service $ECS_SERVICE to stabilize..."
           aws ecs wait services-stable \
             --cluster "$ECS_CLUSTER" \
             --services "$ECS_SERVICE"
+          STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "::error::ECS service failed to reach stable state within timeout!"
+            echo "=== Recent ECS Service Events ==="
+            aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE" \
+              --query 'services[0].events[0:20].[createdAt,message]' \
+              --output table || true
+
+            echo "=== Stopped Tasks Details ==="
+            STOPPED_TASKS=$(aws ecs list-tasks \
+              --cluster "$ECS_CLUSTER" \
+              --service-name "$ECS_SERVICE" \
+              --desired-status STOPPED \
+              --query 'taskArns[0:5]' \
+              --output text || true)
+
+            if [ -n "$STOPPED_TASKS" ] && [ "$STOPPED_TASKS" != "None" ]; then
+              aws ecs describe-tasks \
+                --cluster "$ECS_CLUSTER" \
+                --tasks $STOPPED_TASKS \
+                --query 'tasks[].[taskArn,stoppedReason,stopCode,containers[].[name,exitCode,reason]]' \
+                --output json || true
+            fi
+            exit $STATUS
+          fi
+          echo "ECS service reached stable state successfully!"

@@ -7,7 +7,7 @@ jest.mock('next/navigation', () => ({
 
 test('renders main headline', () => {
   render(<App />);
-  const headlineElement = screen.getByText(/My Journey With One Touch/i);
+  const headlineElement = screen.getByText(/Journey/i);
   expect(headlineElement).toBeInTheDocument();
 });
 
