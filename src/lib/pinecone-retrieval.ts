@@ -11,7 +11,6 @@ const OWNER_PRIVATE_FAMILY_SOURCE_IDS = [
   'owner_restricted_family_history',
   'owner_restricted_emotional_reactions',
   'girish_qa_027',
-  'family_background_raw_private_20261020',
   'bio_002',
   'bio_003',
   'detail_family_private',
@@ -109,6 +108,10 @@ export async function retrievePortfolioContext(question: string): Promise<string
             { source_id: { $nin: [...OWNER_PRIVATE_FAMILY_SOURCE_IDS, ...EDUCATION_SOURCE_IDS] } },
           ],
         };
+  const current = latestQuestion(question);
+  const isFollowUp = /^(?:and\s+)?(?:what else|what about (?:it|that|them|those|the second one|the first one)|how about (?:it|that|the second one|the first one)|tell me more|why(?: did you choose that)?|can you explain that|explain that|more about (?:it|that))\??$/i.test(current);
+  const searchInput = isFollowUp ? question : current;
+
   const response = await fetch(`https://${host}/records/namespaces/portfolio/search`, {
     method: 'POST',
     headers: {
@@ -119,7 +122,7 @@ export async function retrievePortfolioContext(question: string): Promise<string
     body: JSON.stringify({
       query: {
         top_k: identityQuestion ? 1 : 5,
-        inputs: { text: question },
+        inputs: { text: searchInput },
         filter,
       },
       fields: ['title', 'category', 'year', 'content', 'section'],

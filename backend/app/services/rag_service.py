@@ -13,7 +13,6 @@ OWNER_PRIVATE_FAMILY_SOURCE_IDS = {
     "owner_restricted_family_history",
     "owner_restricted_emotional_reactions",
     "girish_qa_027",
-    "family_background_raw_private_20261020",
     "bio_002",
     "bio_003",
     "detail_family_private",

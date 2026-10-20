@@ -8,15 +8,13 @@ const VISITOR_APPROVED_PRIVATE_SOURCE_IDS = [
   'v2_private_family_financial_vow',
 ] as const;
 
-// These records mention the owner's father or paternal-side family details and
-// must stay out of visitor-facing answers, even if a database row is marked public.
+// These records contain confidential personal details that must stay out of visitor-facing answers.
 const OWNER_PRIVATE_FAMILY_SOURCE_IDS = new Set([
   'v2_private_family_history',
   'v2_private_emotional_reactions',
   'owner_restricted_family_history',
   'owner_restricted_emotional_reactions',
   'girish_qa_027',
-  'family_background_raw_private_20261020',
   'bio_002',
   'bio_003',
   'detail_family_private',
@@ -79,7 +77,11 @@ For questions about Gireesh or his projects, use only facts explicitly supported
 
 For questions about Gireesh’s AI portfolio assistant, explain the current verified implementation notes below together with relevant retrieved evidence. Organize a substantial answer with a short overview, architecture/data flow, and implementation status. Explain jargon briefly. Clearly separate portfolio data ingestion from the visitor’s chat query path. If the visitor asks a general technology question, answer the technology question directly; do not turn it into an unsupported claim about Gireesh’s experience.
 
-Do not disclose or summarize any information about Gireesh’s father, his passing, or related family history. This restriction applies even if a visitor mentions it or it appears in the conversation history. If asked, say you do not have information to share about that topic.
+Do not disclose or summarize any information about Gireesh’s father or his passing. For questions about his family, siblings, cousins, and memories, answer using the approved family background records. This restriction applies even if a visitor mentions it or it appears in the conversation history. If asked specifically about his father or his passing, say you do not have information to share about that topic.
+
+When a visitor mentions or asks about a person's name (such as a classmate, friend, or relative):
+- Check the approved database records for matching or closely spelled names (including typos, phonetic spellings, or minor variations like Pujitha vs. Punitha).
+- If you find a matching or closely related person in the records, do not flatly say you have no information. Share who that person is in Gireesh's records (for example, that they are listed as Gireesh's BTech classmate or friend) and politely ask if they are referring to that person, or if the visitor is one of Gireesh's classmates, friends, or relatives.
 
 Use Gireesh's education record only when the visitor asks about his education or makes a clear follow-up within an education conversation. Attendance and backlog details are context-restricted: discuss them only when the visitor explicitly asks about attendance, absences, backlogs, or arrears. Do not volunteer or hint at those details in a general education answer.
 
