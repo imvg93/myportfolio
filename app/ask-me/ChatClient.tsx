@@ -14,12 +14,15 @@ import {
   LogOut,
   UserRound,
   MessageSquarePlus,
-  GraduationCap,
-  Flame,
-  Code2,
-  Heart,
   Sun,
   Moon,
+  FolderKanban,
+  BrainCircuit,
+  Layers3,
+  BriefcaseBusiness,
+  Code2,
+  ContactRound,
+  Star,
 } from 'lucide-react';
 import { useTheme } from '@/lib/use-theme';
 
@@ -29,7 +32,19 @@ type Message = {
   content: string;
   timestamp?: string;
   modelUsed?: string;
+  suggestions?: string[];
 };
+
+type StarterQuestion = { label: string; question: string };
+
+const STARTER_CATEGORIES = [
+  { label: 'Explore My Projects', icon: FolderKanban, accent: 'border-blue-300/20 bg-blue-400/10 text-blue-200' },
+  { label: 'Discover My AI Work', icon: BrainCircuit, accent: 'border-amber-300/20 bg-amber-400/10 text-amber-200' },
+  { label: 'Understand My Technical Architecture', icon: Layers3, accent: 'border-cyan-300/20 bg-cyan-400/10 text-cyan-200' },
+  { label: 'Learn About My Experience', icon: BriefcaseBusiness, accent: 'border-rose-300/20 bg-rose-400/10 text-rose-200' },
+  { label: 'Explore My Technical Skills', icon: Code2, accent: 'border-violet-300/20 bg-violet-400/10 text-violet-200' },
+  { label: 'Get My Contact Information', icon: ContactRound, accent: 'border-emerald-300/20 bg-emerald-400/10 text-emerald-200' },
+];
 
 function createUuid() {
   const cryptoApi = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
@@ -53,76 +68,6 @@ function createUuid() {
 function createMessageId() {
   return createUuid();
 }
-
-const STARTER_PROMPTS = [
-  {
-    category: 'College & learning',
-    question: 'What was college like for you?',
-    prompt: 'What was your college journey like, and how did you get started with coding?',
-    icon: GraduationCap,
-    accent: 'border-blue-300/20 bg-blue-400/10 text-blue-200',
-  },
-  {
-    category: 'Challenges & growth',
-    question: 'What challenges shaped you?',
-    prompt: 'What challenges shaped you the most, and how did you work through them?',
-    icon: Flame,
-    accent: 'border-amber-300/20 bg-amber-400/10 text-amber-200',
-  },
-  {
-    category: 'Goals & creativity',
-    question: 'What are you building now?',
-    prompt: 'What are you building now, and what are you excited to create next?',
-    icon: Code2,
-    accent: 'border-cyan-300/20 bg-cyan-400/10 text-cyan-200',
-  },
-  {
-    category: 'Love & connection',
-    question: 'What matters in a relationship?',
-    prompt: 'What do you value most in a relationship and emotional connection?',
-    icon: Heart,
-    accent: 'border-rose-300/20 bg-rose-400/10 text-rose-200',
-  },
-];
-
-const FOLLOW_UP_PROMPTS = [
-  ...STARTER_PROMPTS,
-  {
-    category: 'Personal life',
-    question: 'What do you enjoy outside work?',
-    prompt: 'What do you enjoy doing outside of work and coding?',
-  },
-  {
-    category: 'Growing up',
-    question: 'What were you like growing up?',
-    prompt: 'What were you like growing up, and what experiences shaped you?',
-  },
-  {
-    category: 'Studies',
-    question: 'Which subject did you enjoy most?',
-    prompt: 'Which subjects or college projects did you enjoy most, and why?',
-  },
-  {
-    category: 'Career',
-    question: 'How did you get your start in tech?',
-    prompt: 'How did you get your start in tech, and what was your first role like?',
-  },
-  {
-    category: 'Daily life',
-    question: 'What does a typical day look like?',
-    prompt: 'What does a typical day look like for you these days?',
-  },
-  {
-    category: 'Personal values',
-    question: 'What values matter most to you?',
-    prompt: 'What personal values matter most to you, and how do they guide your choices?',
-  },
-  {
-    category: 'Future plans',
-    question: 'What are you hoping to do next?',
-    prompt: 'What are you hoping to learn, build, or achieve next?',
-  },
-];
 
 // Rich text formatter for assistant replies with code block & copy support
 function FormattedContent({ content }: { content: string }) {
@@ -253,10 +198,18 @@ export default function ChatClient() {
   const [conversationId, setConversationId] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [starterQuestions, setStarterQuestions] = useState<StarterQuestion[]>([]);
+  const [starterQuestionsLoading, setStarterQuestionsLoading] = useState(true);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackPromptDismissed, setFeedbackPromptDismissed] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
   const [email, setEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [askedSuggestionCategories, setAskedSuggestionCategories] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
@@ -265,6 +218,38 @@ export default function ChatClient() {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const shouldAutoScrollRef = useRef(true);
+  const starterQuestionsRequestedRef = useRef(false);
+
+  const loadStarterQuestions = async () => {
+    if (starterQuestionsRequestedRef.current) return;
+    starterQuestionsRequestedRef.current = true;
+    setStarterQuestionsLoading(true);
+    try {
+      const response = await fetch('/api/chat/suggestions', { cache: 'no-store' });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data?.ok === true && Array.isArray(data.suggestions)) {
+        const parsedQuestions = data.suggestions
+          .filter((item: unknown): item is StarterQuestion => Boolean(
+            item && typeof item === 'object'
+            && typeof (item as StarterQuestion).label === 'string'
+            && typeof (item as StarterQuestion).question === 'string',
+          ))
+          .map((item: StarterQuestion) => ({ label: item.label.trim(), question: item.question.trim() }))
+          .filter((item: StarterQuestion) => item.label && item.question);
+        setStarterQuestions(Array.from(new Map<string, StarterQuestion>(
+          parsedQuestions.map((item: StarterQuestion): [string, StarterQuestion] => [item.label, item]),
+        ).values()).slice(0, 6));
+      }
+    } catch {
+      // The chat remains usable if optional starter question generation fails.
+    } finally {
+      setStarterQuestionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadStarterQuestions();
+  }, []);
 
   useEffect(() => {
     setConversationId(createUuid());
@@ -405,17 +390,6 @@ export default function ChatClient() {
     const activeConversationId = conversationId || createUuid();
     if (!conversationId) setConversationId(activeConversationId);
 
-    const normalize = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
-    const normalizedText = normalize(text);
-    const askedSuggestion = FOLLOW_UP_PROMPTS.find((suggestion) =>
-      [suggestion.question, suggestion.prompt].some((question) => normalize(question) === normalizedText),
-    );
-    if (askedSuggestion) {
-      setAskedSuggestionCategories((previous) =>
-        previous.includes(askedSuggestion.category) ? previous : [...previous, askedSuggestion.category],
-      );
-    }
-
     const userMsg: Message = {
       id: createMessageId(),
       role: 'user',
@@ -460,6 +434,12 @@ export default function ChatClient() {
         role: 'assistant',
         content: reply,
         modelUsed: json.model_used || 'GPT-4o RAG',
+        suggestions: Array.isArray(json?.suggestions)
+          ? Array.from(new Set<string>(json.suggestions
+            .filter((suggestion: unknown): suggestion is string => typeof suggestion === 'string')
+            .map((suggestion: string) => suggestion.trim())
+            .filter((suggestion: string) => suggestion.length > 0))).slice(0, 4)
+          : [],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -489,10 +469,46 @@ export default function ChatClient() {
     setMessages([]);
     setConversationId(createUuid());
     setInput('');
-    setAskedSuggestionCategories([]);
     setMenuOpen(false);
+    setFeedbackOpen(false);
+    setFeedbackPromptDismissed(false);
+    setFeedbackSubmitted(false);
+    setFeedbackRating(0);
+    setFeedbackComment('');
+    setFeedbackError('');
     shouldAutoScrollRef.current = true;
     feedRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    starterQuestionsRequestedRef.current = false;
+    setStarterQuestions([]);
+    void loadStarterQuestions();
+  };
+
+  const submitFeedback = async () => {
+    if (feedbackSubmitting || feedbackSubmitted || feedbackRating < 1 || !conversationId) return;
+    setFeedbackSubmitting(true);
+    setFeedbackError('');
+    try {
+      const response = await fetch('/api/chat/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId,
+          rating: feedbackRating,
+          ...(feedbackComment.trim() ? { comment: feedbackComment.trim() } : {}),
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (response.ok || response.status === 409) {
+        setFeedbackSubmitted(true);
+        setFeedbackOpen(false);
+        return;
+      }
+      setFeedbackError(typeof result?.error === 'string' ? result.error : 'Feedback could not be saved. Please try again.');
+    } catch {
+      setFeedbackError('Connection problem. Your feedback was not submitted. Please try again.');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -507,6 +523,35 @@ export default function ChatClient() {
     const local = email.split('@')[0] || 'Friend';
     return local.charAt(0).toUpperCase() + local.slice(1);
   }, [userName, email]);
+
+  const latestAssistantMessageId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
+  const answeredQuestionCount = Math.min(
+    messages.filter((message) => message.role === 'user').length,
+    messages.filter((message) => message.role === 'assistant').length,
+  );
+
+  useEffect(() => {
+    const latestMessage = messages[messages.length - 1];
+    if (
+      answeredQuestionCount >= 5
+      && latestMessage?.role === 'assistant'
+      && !loading
+      && !feedbackPromptDismissed
+      && !feedbackSubmitted
+    ) {
+      setFeedbackOpen(true);
+    }
+  }, [answeredQuestionCount, feedbackPromptDismissed, feedbackSubmitted, loading, messages]);
+
+  useEffect(() => {
+    if (!feedbackOpen) return;
+    const feed = feedRef.current;
+    // The prompt is triggered by the fifth answered question and sits after
+    // the transcript. Bring it into view even when the visitor had scrolled
+    // up to read an earlier message; otherwise it can appear to never open.
+    shouldAutoScrollRef.current = true;
+    feed?.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
+  }, [feedbackOpen]);
 
   return (
     <div
@@ -624,6 +669,21 @@ export default function ChatClient() {
                 <MessageSquarePlus className="h-4 w-4 text-slate-400" />
                 New chat
               </button>
+              {messages.length > 0 && !feedbackSubmitted && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setFeedbackError('');
+                    setFeedbackOpen(true);
+                  }}
+                  className="askme-dropdown-item flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white"
+                >
+                  <Star className="h-4 w-4 text-amber-300" />
+                  Rate this chat
+                </button>
+              )}
               <button
                 type="button"
                 role="menuitem"
@@ -668,35 +728,29 @@ export default function ChatClient() {
               className="flex flex-1 flex-col px-1 pb-4 pt-5 text-center sm:px-3 sm:pb-8 sm:pt-10"
             >
               <h1 className="askme-welcome-title text-xl font-semibold tracking-tight text-white sm:text-2xl">
-                Hi {displayName}, welcome!
+                Gireesh&apos;s AI Assistant
               </h1>
               <p className="askme-muted mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
-                Ask me anything, or choose a question below.
+                Your guide to my technical work, projects, skills, and engineering experience. Ask me anything to explore my professional background.
               </p>
-              <div className="mx-auto mt-auto grid w-full max-w-xl grid-cols-1 gap-2.5 pt-16 min-[360px]:grid-cols-2 sm:mt-5 sm:gap-3 sm:pt-0">
-                {STARTER_PROMPTS.map((suggestion) => {
-                  const SuggestionIcon = suggestion.icon;
-
-                  return (
+              <div className="mx-auto mt-6 grid w-full max-w-3xl grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:mt-8 sm:grid-cols-3 sm:gap-3" aria-label="Suggested questions" aria-busy={starterQuestionsLoading}>
+                  {STARTER_CATEGORIES.map(({ label, icon: SuggestionIcon, accent }) => {
+                    const question = starterQuestions.find((item) => item.label === label)?.question || label;
+                    return (
                     <button
-                      key={suggestion.category}
-                      onClick={() => handleSend(suggestion.prompt)}
-                      className="askme-starter-card group flex min-h-[92px] items-start gap-3 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:p-3.5"
+                      key={label}
+                      type="button"
+                      onClick={() => handleSend(question)}
+                      aria-label={`Ask: ${label}`}
+                      className="askme-starter-card group flex min-h-[58px] items-center gap-2.5 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left text-xs font-medium leading-snug text-slate-100 shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:min-h-[64px] sm:gap-3 sm:p-3.5 sm:text-sm"
                     >
-                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${suggestion.accent}`}>
-                        <SuggestionIcon className="h-4 w-4" />
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${accent}`}>
+                        <SuggestionIcon className="h-4 w-4" aria-hidden="true" />
                       </span>
-                      <span className="min-w-0">
-                        <span className="askme-muted block text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
-                          {suggestion.category}
-                        </span>
-                        <span className="askme-primary-text mt-1 block text-xs font-medium leading-snug text-slate-100 sm:text-sm">
-                          {suggestion.question}
-                        </span>
-                      </span>
+                      <span>{label}</span>
                     </button>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </motion.div>
           )}
@@ -754,6 +808,24 @@ export default function ChatClient() {
                     <FormattedContent content={m.content} />
                   )}
 
+                  {m.role === 'assistant' && m.id === latestAssistantMessageId && !loading && !!m.suggestions?.length && (
+                    <div className="mt-3 border-t border-slate-800/70 pt-2.5" aria-label="Suggested follow-up questions">
+                      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">You could also ask</p>
+                      <div className="flex flex-wrap gap-2">
+                        {m.suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => handleSend(suggestion)}
+                            className="askme-suggestion min-h-8 rounded-full border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-left text-[11px] font-medium text-slate-300 transition hover:border-cyan-500/60 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 sm:text-xs"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Assistant Message Actions */}
                   {m.role === 'assistant' && (
                     <div className="mt-0 flex items-center justify-end border-t-0 pt-0 text-xs sm:mt-3 sm:justify-between sm:border-t sm:border-slate-800 sm:pt-2">
@@ -794,6 +866,83 @@ export default function ChatClient() {
           {/* Thinking orb stays inside the conversation feed, after prior messages. */}
           {loading && <ThinkingOrb />}
 
+          {feedbackOpen && messages.length > 0 && !feedbackSubmitted && (
+            <section
+              aria-label="Rate this chat"
+              className={`mx-auto w-full max-w-2xl rounded-2xl border p-4 shadow-lg sm:p-5 ${theme === 'dark'
+                ? 'border-cyan-900/70 bg-slate-950/95 text-slate-100 shadow-black/20'
+                : 'border-cyan-200 bg-white/95 text-slate-900 shadow-slate-900/10 backdrop-blur-xl'}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold sm:text-base">How was this chat?</h2>
+                  <p className={`mt-1 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Your rating helps improve the assistant. Feedback is stored for review.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFeedbackOpen(false);
+                    setFeedbackPromptDismissed(true);
+                  }}
+                  className={`rounded-lg px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+                >
+                  Not now
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-1" role="radiogroup" aria-label="Rating from 1 to 5 stars">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    role="radio"
+                    aria-checked={feedbackRating === rating}
+                    aria-label={`${rating} ${rating === 1 ? 'star' : 'stars'}`}
+                    onClick={() => setFeedbackRating(rating)}
+                    className={`rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${theme === 'dark' ? 'text-amber-300 hover:bg-slate-800' : 'text-amber-500 hover:bg-amber-50'}`}
+                  >
+                    <Star className={`h-6 w-6 ${feedbackRating >= rating ? 'fill-current' : ''}`} />
+                  </button>
+                ))}
+                <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{feedbackRating ? `${feedbackRating} / 5` : 'Choose a rating'}</span>
+              </div>
+
+              <label className={`mt-3 block text-xs ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`} htmlFor="chat-feedback-comment">
+                Optional comment
+              </label>
+              <textarea
+                id="chat-feedback-comment"
+                value={feedbackComment}
+                onChange={(event) => setFeedbackComment(event.target.value.slice(0, 2000))}
+                maxLength={2000}
+                rows={2}
+                placeholder="Anything you’d like me to know?"
+                className={`mt-1.5 w-full resize-y rounded-xl border px-3 py-2 text-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 ${theme === 'dark'
+                  ? 'border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500'
+                  : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400'}`}
+              />
+
+              {feedbackError && <p className="mt-2 text-xs text-rose-300" role="alert">{feedbackError}</p>}
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={submitFeedback}
+                  disabled={feedbackRating < 1 || feedbackSubmitting}
+                  className="rounded-xl bg-cyan-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {feedbackSubmitting ? 'Submitting…' : 'Submit rating'}
+                </button>
+              </div>
+            </section>
+          )}
+          {feedbackSubmitted && messages.length > 0 && (
+            <p className={`mx-auto w-fit rounded-full border px-4 py-2 text-xs ${theme === 'dark'
+              ? 'border-emerald-800 bg-emerald-950/80 text-emerald-200'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`} role="status">
+              Thanks for your feedback.
+            </p>
+          )}
+
         </div>
       </div>
 
@@ -805,22 +954,6 @@ export default function ChatClient() {
         }}
       >
         <div className="mx-auto max-w-3xl">
-          {messages.length > 0 && !loading && (
-            <div className="mb-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar" aria-label="Suggested questions">
-              {FOLLOW_UP_PROMPTS.filter(
-                (suggestion) => !askedSuggestionCategories.includes(suggestion.category),
-              ).map((suggestion) => (
-                <button
-                  key={suggestion.category}
-                  onClick={() => handleSend(suggestion.prompt)}
-                  className="askme-suggestion min-h-8 shrink-0 rounded-full border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-cyan-500/60 hover:bg-slate-800 hover:text-white sm:text-xs"
-                >
-                  {suggestion.question}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Input Box */}
           <div className="askme-composer relative flex items-end gap-1.5 rounded-2xl border border-slate-700 bg-slate-950/95 p-1.5 shadow-lg shadow-black/30 transition-all focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 sm:gap-2 sm:p-2.5">
             <textarea
@@ -853,9 +986,7 @@ export default function ChatClient() {
               <ArrowUp className="h-5 w-5 stroke-[2.5]" />
             </button>
           </div>
-          <p className="askme-muted mt-2 px-2 text-xs text-slate-500">
-            Conversations and the email used to sign in may be stored for review and service improvement.
-          </p>
+
 
         </div>
       </footer>

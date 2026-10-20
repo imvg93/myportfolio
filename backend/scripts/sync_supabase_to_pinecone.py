@@ -33,6 +33,17 @@ LOCAL_DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "v2_drafts" 
 AUTHORITATIVE_DATASET_FILE = Path(__file__).resolve().parent.parent / "data" / "v2_drafts" / "portfolio_data.v2.normalized.json"
 EXPECTED_DIMENSION = 384
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+OWNER_PRIVATE_FAMILY_SOURCE_IDS = {
+    "v2_private_family_history",
+    "v2_private_emotional_reactions",
+    "owner_restricted_family_history",
+    "owner_restricted_emotional_reactions",
+    "girish_qa_027",
+    "family_background_raw_private_20261020",
+    "bio_002",
+    "bio_003",
+    "detail_family_private",
+}
 
 
 def require_env(name: str) -> str:
@@ -198,8 +209,12 @@ def fetch_public_records() -> List[Dict[str, Any]]:
                 if resp.status_code == 200:
                     records = resp.json()
                     if records:
-                        print(f"✅ Fetched {len(records)} public records directly from Supabase!")
-                        return records
+                        approved_records = [
+                            record for record in records
+                            if record.get("source_id") not in OWNER_PRIVATE_FAMILY_SOURCE_IDS
+                        ]
+                        print(f"✅ Fetched {len(approved_records)} public records directly from Supabase!")
+                        return approved_records
         except Exception as e:
             print(f"⚠️ Supabase fetch warning: {e}. Falling back to local v2 public dataset.", file=sys.stderr)
 
@@ -207,7 +222,11 @@ def fetch_public_records() -> List[Dict[str, Any]]:
         print(f"📂 Loading public records from local dataset: {LOCAL_DATA_FILE.name}")
         with open(LOCAL_DATA_FILE, "r", encoding="utf-8") as f:
             all_records = json.load(f)
-        return [r for r in all_records if r.get("visibility") == "public"]
+        return [
+            r for r in all_records
+            if r.get("visibility") == "public"
+            and r.get("source_id") not in OWNER_PRIVATE_FAMILY_SOURCE_IDS
+        ]
 
     print(f"❌ Error: No data source available. Run generate_v2_dataset.py first.", file=sys.stderr)
     sys.exit(1)

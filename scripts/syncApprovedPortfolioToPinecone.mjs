@@ -4,12 +4,21 @@ dotenv.config({ path: '.env.local', quiet: true });
 dotenv.config({ quiet: true });
 
 const privateIds = [
-  'v2_private_family_history',
-  'v2_private_emotional_reactions',
   'v2_private_relationships_boundaries',
   'v2_private_lifestyle_daily_routine',
   'v2_private_family_financial_vow',
 ];
+const ownerPrivateFamilyIds = new Set([
+  'v2_private_family_history',
+  'v2_private_emotional_reactions',
+  'owner_restricted_family_history',
+  'owner_restricted_emotional_reactions',
+  'girish_qa_027',
+  'family_background_raw_private_20261020',
+  'bio_002',
+  'bio_003',
+  'detail_family_private',
+]);
 
 function required(name) {
   const value = process.env[name]?.trim();
@@ -40,7 +49,8 @@ const privateRows = await loadRecords({
   source_id: `in.(${privateIds.join(',')})`,
 });
 const records = [...publicRows, ...privateRows].filter((record) =>
-  record.visibility === 'public' || (record.visibility === 'private' && privateIds.includes(record.source_id)),
+  !ownerPrivateFamilyIds.has(record.source_id)
+  && (record.visibility === 'public' || (record.visibility === 'private' && privateIds.includes(record.source_id))),
 );
 if (!records.length) throw new Error('No approved portfolio records found in Supabase');
 
