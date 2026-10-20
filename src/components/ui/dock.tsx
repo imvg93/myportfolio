@@ -38,6 +38,7 @@ type DockItemProps = {
   className?: string;
   children: React.ReactNode;
   onClick?: () => void;
+  mobileLabel?: string;
 };
 
 type DockLabelProps = {
@@ -131,7 +132,7 @@ function Dock({
   );
 }
 
-function DockItem({ children, className, onClick }: DockItemProps) {
+function DockItem({ children, className, onClick, mobileLabel }: DockItemProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { distance, magnification, mouseX, spring } = useDock();
 
@@ -200,6 +201,11 @@ function DockItem({ children, className, onClick }: DockItemProps) {
           } as any
         );
       })}
+      {mobileLabel && (
+        <span className="pointer-events-none absolute bottom-1 left-1/2 w-max -translate-x-1/2 rounded-full bg-white/80 px-1.5 py-1 text-[10px] font-medium leading-none text-neutral-600 shadow-sm dark:bg-neutral-900/80 dark:text-neutral-300 sm:hidden">
+          {mobileLabel}
+        </span>
+      )}
     </motion.div>
   );
 }

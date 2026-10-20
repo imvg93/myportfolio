@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import '../src/index.css';
 import { TextShimmer } from '../src/components/ui/text-shimmer';
@@ -12,14 +12,12 @@ import { SkillsPage } from '../src/components/SkillsPage';
 import { ConnectRoomPage } from '../src/components/ConnectRoomPage';
 import { useTheme } from '../src/lib/use-theme';
 import {
-  Activity,
   User,
   Home as HomeIcon,
-  Mail,
   FolderKanban,
-  ScrollText,
   SunMoon,
   ArrowLeft,
+  ArrowUpRight,
   Award,
   Users,
   Brain,
@@ -86,6 +84,57 @@ const dockData = [
 
 type Page = 'home' | 'projects' | 'about' | 'skills' | 'connect';
 
+function BlurText({
+  text,
+  delay = 70,
+  animateBy = 'words',
+  className = '',
+}: {
+  text: string;
+  delay?: number;
+  animateBy?: 'words' | 'letters';
+  className?: string;
+}) {
+  const [inView, setInView] = useState(false);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const segments = useMemo(
+    () => animateBy === 'words' ? text.split(' ') : Array.from(text),
+    [animateBy, text],
+  );
+
+  useEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+      setInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <span ref={textRef} className={`inline-flex flex-wrap ${className}`}>
+      {segments.map((segment, index) => (
+        <span
+          key={`${segment}-${index}`}
+          className={`inline-block ${inView ? 'home-blur-text-enter' : ''}`}
+          style={{ animationDelay: `${index * delay}ms` }}
+        >
+          {segment}{animateBy === 'words' && index < segments.length - 1 ? '\u00a0' : ''}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function Home() {
   const [isHomeModalOpen, setIsHomeModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -104,6 +153,10 @@ export default function Home() {
       setCurrentPage('skills');
     } else if (title === 'Connect Room') {
       setCurrentPage('connect');
+    } else if (title === 'Insight AI') {
+      router.push('/ask-me');
+    } else if (title === 'Theme') {
+      toggleTheme();
     }
   };
 
@@ -172,8 +225,8 @@ export default function Home() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden"
+    <main
+      className="relative flex min-h-screen min-h-[100svh] w-full flex-col items-center px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6 sm:px-6 sm:pt-8"
       style={{
         background: theme === 'dark'
           ? 'radial-gradient(ellipse 180% 120% at center top, #1e293b 0%, #0f172a 46%, #020617 100%)'
@@ -182,8 +235,8 @@ export default function Home() {
       }}
     >
       {/* Top Branding Element */}
-      <div className="mb-12 md:mb-16 relative z-10">
-        <div className="flex items-center gap-4 rounded-full bg-white px-6 py-3 shadow-sm dark:bg-neutral-900">
+      <div className="relative z-10 mb-2 sm:mb-4">
+        <div className="flex items-center gap-3 rounded-full bg-white/85 px-5 py-2.5 shadow-sm backdrop-blur dark:bg-neutral-900/85 sm:gap-4 sm:px-6 sm:py-3">
           <span className="text-lg font-bold text-black dark:text-white" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>Portfolio</span>
           <div className="w-px h-4 bg-gray-300"></div>
           <TextShimmer 
@@ -197,135 +250,63 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-col items-center text-center max-w-4xl relative z-10">
-        {/* Dock Component */}
-        <div className="mb-8 md:mb-10 w-full flex justify-center">
-          <Dock className='items-end pb-3 bg-transparent' magnification={120} distance={200}>
-            {dockData.map((item, idx) => {
-              // Create onClick handler for Home and Project items
-              if (item.title === 'Home') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => {
-                      setCurrentPage('home');
-                      setIsHomeModalOpen(true);
-                    }}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'Project') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => {
-                      console.log('Project icon clicked! Navigating to projects page...');
-                      setCurrentPage('projects');
-                    }}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'About Me') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => {
-                      console.log('About Me icon clicked! Navigating to about page...');
-                      setCurrentPage('about');
-                    }}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'Skills') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => {
-                      console.log('Skills icon clicked! Navigating to skills page...');
-                      setCurrentPage('skills');
-                    }}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'Connect Room') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => {
-                      console.log('Connect Room icon clicked! Navigating to connect page...');
-                      setCurrentPage('connect');
-                    }}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'Insight AI') {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                    onClick={() => router.push('/ask-me')}
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else if (item.title === 'Theme') {
-                return (
-                  <DockItem key={idx} className='aspect-square rounded-full' onClick={toggleTheme}>
-                    <DockLabel>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              } else {
-                return (
-                  <DockItem
-                    key={idx}
-                    className='aspect-square rounded-full'
-                  >
-                    <DockLabel>{item.title}</DockLabel>
-                    <DockIcon hoverColor={item.hoverColor}>{item.icon}</DockIcon>
-                  </DockItem>
-                );
-              }
-            })}
-          </Dock>
-        </div>
+      <section className="relative z-10 flex w-full max-w-7xl flex-1 flex-col items-center justify-center py-5 text-center sm:py-8" aria-labelledby="home-title">
+        <h1 id="home-title" className="relative isolate text-center font-mono font-bold uppercase leading-[0.76] tracking-[-0.09em]">
+          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: theme === 'dark' ? '#C3E41D' : '#56720A' }}>
+            <BlurText text="GIREESH" animateBy="letters" delay={55} />
+          </span>
+          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: theme === 'dark' ? '#C3E41D' : '#56720A' }}>
+            <BlurText text="VEERANKI" animateBy="letters" delay={55} />
+          </span>
 
-        {/* Home Placeholder Modal */}
-        <HomePlaceholderModal 
-          isOpen={isHomeModalOpen} 
-          onClose={() => setIsHomeModalOpen(false)} 
-        />
+        </h1>
 
-        {/* Main Headline */}
-        
-
-        {/* Sub-headline */}
-        <p  className="mx-auto mb-5 text-center text-4xl font-bold leading-tight text-black dark:text-white md:text-5xl lg:text-6xl"
-          style={{ fontFamily: 'Be Vietnam Pro, sans-serif', textAlign: 'center' }}>
-        My Journey With One Touch
+        <p className="mt-8 max-w-2xl px-2 text-balance text-base font-medium text-slate-600 dark:text-slate-300 sm:mt-10 sm:text-xl md:text-2xl">
+          <BlurText text="My Journey With One Touch" animateBy="words" delay={110} />
         </p>
 
-        {/* CTA Buttons */}
-        
-      </div>
-    </div>
+        <div className="mt-7 flex w-full flex-col items-center gap-2 sm:mt-8">
+          <button
+            type="button"
+            onClick={() => router.push('/ask-me')}
+            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-3 rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/50 active:translate-y-0 sm:w-auto sm:min-w-56"
+          >
+            <Brain className="h-5 w-5" aria-hidden="true" />
+            <span>Ask my AI</span>
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            Ask about my skills, projects, experience, and more.
+          </p>
+        </div>
+
+        <div className="mt-8 flex w-full justify-center sm:mt-10 md:mt-12" aria-label="Portfolio navigation">
+          <Dock className="items-end bg-transparent pb-2" magnification={76} distance={140} panelHeight={64}>
+            {dockData.map((item) => (
+              <DockItem
+                key={item.title}
+                className={`aspect-square rounded-full touch-manipulation max-sm:aspect-auto max-sm:h-14 max-sm:flex-col ${item.title === 'Theme' ? 'max-sm:hidden' : ''}`}
+                mobileLabel={item.title === 'Connect Room' ? 'Connect' : item.title === 'Insight AI' ? 'AI' : item.title === 'Project' ? 'Projects' : item.title === 'About Me' ? 'About' : item.title === 'Theme' ? 'Theme' : item.title}
+                onClick={() => handleDockClick(item.title)}
+              >
+                <DockLabel>{item.title === 'Theme' ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : item.title}</DockLabel>
+                <DockIcon
+                  hoverColor={item.hoverColor}
+                  className={`max-sm:h-5 ${item.title === 'Insight AI' ? 'rounded-full bg-emerald-500/15 p-1 ring-1 ring-emerald-500/60 shadow-md shadow-emerald-500/20' : ''}`}
+                >
+                  {item.icon}
+                </DockIcon>
+              </DockItem>
+            ))}
+          </Dock>
+        </div>
+      </section>
+
+      <HomePlaceholderModal
+        isOpen={isHomeModalOpen}
+        onClose={() => setIsHomeModalOpen(false)}
+      />
+    </main>
   );
 }
 

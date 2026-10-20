@@ -7,6 +7,11 @@ import { verifyAndConsumeOtp } from '@/lib/supabase';
 import { createAuthSession, getAuthSession, getSessionToken, revokeAuthSession } from '@/lib/auth-session';
 
 jest.mock('@/lib/supabase', () => ({ verifyAndConsumeOtp: jest.fn() }));
+jest.mock('@/lib/monitoring', () => ({
+  consumeOtpRateLimit: jest.fn().mockResolvedValue(true),
+  safeMonitoringWrite: jest.fn(async (_label: string, operation: () => Promise<unknown>) => operation()),
+  updateOtpActivity: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@/lib/auth-session', () => ({
   AUTH_SESSION_COOKIE: 'verified_session',
   AUTH_SESSION_TTL_SECONDS: 3600,
