@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-type View = 'stats' | 'otp' | 'email' | 'conversations' | 'timeline';
+type View = 'stats' | 'otp' | 'email' | 'conversations' | 'timeline' | 'spellings' | 'feedback';
 type Row = Record<string, unknown>;
 type Filters = { query: string; from: string; to: string; sort: 'recent' | 'oldest' };
 type Conversation = {
@@ -37,6 +37,8 @@ const tabs: { id: View; label: string }[] = [
   { id: 'otp', label: 'OTP activity' },
   { id: 'email', label: 'Email activity' },
   { id: 'timeline', label: 'User timeline' },
+  { id: 'spellings', label: 'Name spellings' },
+  { id: 'feedback', label: 'Chat feedback' },
 ];
 const labels: Record<string, string> = {
   email: 'Email', visitor_email: 'Email', recipient_email: 'Recipient', purpose: 'Purpose',
@@ -91,6 +93,9 @@ export default function MonitoringDashboard() {
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [spellingDrafts, setSpellingDrafts] = useState<Record<string, string>>({});
+  const [savingSpelling, setSavingSpelling] = useState<string | null>(null);
+  const [spellingNotice, setSpellingNotice] = useState('');
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -182,6 +187,46 @@ export default function MonitoringDashboard() {
     setSelected(id);
   };
 
+  const saveSpelling = async (row: Row) => {
+    const id = String(row.id || '');
+    const correctedSpelling = (spellingDrafts[id] ?? String(row.corrected_spelling || row.visitor_spelling || '')).trim();
+    if (!id || !correctedSpelling) return;
+    setSavingSpelling(id);
+    setSpellingNotice('');
+    try {
+      const response = await fetch('/api/admin/monitoring', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'spelling', id, correctedSpelling, status: 'reviewed' }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not save spelling.');
+      setRows((current) => current.map((item) => item.id === id ? { ...item, ...result.data } : item));
+      setSpellingDrafts((current) => ({ ...current, [id]: correctedSpelling }));
+      setSpellingNotice('Spelling saved.');
+    } catch (saveError) {
+      setSpellingNotice(saveError instanceof Error ? saveError.message : 'Could not save spelling.');
+    } finally { setSavingSpelling(null); }
+  };
+
+  const markFeedbackReviewed = async (row: Row) => {
+    const id = String(row.id || '');
+    if (!id) return;
+    setSavingSpelling(id);
+    setSpellingNotice('');
+    try {
+      const response = await fetch('/api/admin/monitoring', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'feedback', id, reviewStatus: 'reviewed' }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || 'Could not update feedback.');
+      setRows((current) => current.map((item) => item.id === id ? { ...item, ...result.data } : item));
+      setSpellingNotice('Feedback marked as reviewed.');
+    } catch (saveError) {
+      setSpellingNotice(saveError instanceof Error ? saveError.message : 'Could not update feedback.');
+    } finally { setSavingSpelling(null); }
+  };
+
   const renderConversationList = () => (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -258,7 +303,7 @@ export default function MonitoringDashboard() {
         </section>}
 
         {!selected && <section className="mb-4 grid shrink-0 gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:mb-5 sm:grid-cols-2 sm:p-4 lg:grid-cols-[minmax(16rem,1fr)_12rem_12rem_12rem_auto] lg:items-end">
-          <label className="text-xs font-semibold text-slate-600">{view === 'timeline' ? 'Search by email' : view === 'conversations' ? 'Search email, conversation ID, or message' : 'Search email'}<input type={view === 'timeline' ? 'email' : 'text'} aria-label="Search monitoring records" className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100" value={query} onChange={(event) => { setQuery(event.target.value); if (error) setError(''); }} onKeyDown={(event) => { if (event.key === 'Enter') applyFilters(); }} placeholder={view === 'conversations' ? 'visitor@example.com or a phrase' : 'visitor@example.com'} /></label>
+          <label className="text-xs font-semibold text-slate-600">{view === 'timeline' ? 'Search by email' : view === 'conversations' ? 'Search email, conversation ID, or message' : view === 'spellings' ? 'Search email or name' : view === 'feedback' ? 'Search comment or conversation ID' : 'Search email'}<input type={view === 'timeline' ? 'email' : 'text'} aria-label="Search monitoring records" className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900 outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100" value={query} onChange={(event) => { setQuery(event.target.value); if (error) setError(''); }} onKeyDown={(event) => { if (event.key === 'Enter') applyFilters(); }} placeholder={view === 'conversations' ? 'visitor@example.com or a phrase' : view === 'spellings' ? 'name or visitor@example.com' : view === 'feedback' ? 'comment text or conversation UUID' : 'visitor@example.com'} /></label>
           <label className="text-xs font-semibold text-slate-600">From<input type="date" className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm font-normal text-slate-900" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
           <label className="text-xs font-semibold text-slate-600">To<input type="date" className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm font-normal text-slate-900" value={to} onChange={(event) => setTo(event.target.value)} /></label>
           {view === 'conversations' && <label className="text-xs font-semibold text-slate-600">Sort by<select className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-900" value={sort} onChange={(event) => setSort(event.target.value as 'recent' | 'oldest')}><option value="recent">Recent activity</option><option value="oldest">Oldest activity</option></select></label>}
@@ -271,7 +316,34 @@ export default function MonitoringDashboard() {
             {selected && <div className="h-full min-h-0 min-w-0">{renderConversationDetail()}</div>}
           </div>
         </div>}
-        {view !== 'conversations' && <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {view === 'spellings' && <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <header className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Name spelling review</h2><p className="mt-1 text-xs leading-5 text-slate-500">When the assistant asks a visitor to clarify a name, the spelling and the name context are saved here for your review.</p>{spellingNotice && <p role="status" className="mt-2 text-sm font-medium text-cyan-800">{spellingNotice}</p>}</header>
+          {error && <p role="alert" className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+          {loading ? <p className="p-6 text-sm text-slate-500">Loading spelling records…</p> : rows.length ? <div className="divide-y divide-slate-100">{rows.map((row) => {
+            const id = String(row.id || '');
+            const draft = spellingDrafts[id] ?? String(row.corrected_spelling || row.visitor_spelling || '');
+            return <article key={id} className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)_auto] lg:items-start">
+              <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Visitor spelling</p><p className="mt-1 break-words font-semibold text-slate-900">{String(row.visitor_spelling || '—')}</p><p className="mt-3 text-[10px] font-bold uppercase tracking-wide text-slate-400">Name context</p><p className="mt-1 break-words whitespace-pre-wrap text-sm leading-5 text-slate-700">{String(row.mentioned_name_context || 'No prior name context recorded.')}</p><p className="mt-3 text-xs text-slate-500">{String(row.visitor_email || 'Email unavailable')} · {formatDate(row.created_at)}</p></div>
+              <label className="text-xs font-semibold text-slate-600">Canonical spelling<input aria-label={`Canonical spelling for ${String(row.visitor_spelling || 'name')}`} className="mt-1.5 block min-h-10 w-full rounded-lg border border-slate-300 px-3 text-sm font-normal text-slate-900" value={draft} onChange={(event) => setSpellingDrafts((current) => ({ ...current, [id]: event.target.value }))} /></label>
+              <div className="flex items-center gap-3 lg:pt-5"><button disabled={savingSpelling === id || !draft.trim()} onClick={() => void saveSpelling(row)} className="rounded-lg bg-cyan-800 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-900 disabled:opacity-50">{savingSpelling === id ? 'Saving…' : row.status === 'reviewed' ? 'Update' : 'Save'}</button><span className="text-xs capitalize text-slate-500">{String(row.status || 'pending')}</span></div>
+            </article>;
+          })}</div> : <p className="px-5 py-14 text-center text-sm text-slate-500">No name spelling records yet.</p>}
+          <footer className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm text-slate-500"><span>{count} records · page {page}</span><div className="flex gap-2"><button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Previous</button><button disabled={page * PAGE_SIZE >= count || loading} onClick={() => setPage((value) => value + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Next</button></div></footer>
+        </section>}
+        {view === 'feedback' && <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <header className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Visitor chat feedback</h2><p className="mt-1 text-xs leading-5 text-slate-500">Ratings and optional comments submitted at the end of a chat conversation.</p>{spellingNotice && <p role="status" className="mt-2 text-sm font-medium text-cyan-800">{spellingNotice}</p>}</header>
+          {error && <p role="alert" className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+          {loading ? <p className="p-6 text-sm text-slate-500">Loading feedback…</p> : rows.length ? <div className="divide-y divide-slate-100">{rows.map((row) => {
+            const id = String(row.id || '');
+            const rating = Number(row.rating || 0);
+            return <article key={id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0"><p className="font-semibold text-slate-900" aria-label={`Rating: ${rating} out of 5`}>{'★'.repeat(Math.max(0, Math.min(5, rating)))}<span className="ml-2 text-sm text-slate-600">{rating}/5</span></p><p className="mt-2 break-words whitespace-pre-wrap text-sm leading-6 text-slate-700">{String(row.comment || 'No written comment was provided.')}</p><p className="mt-3 break-all text-xs text-slate-500">{String(row.visitor_email || 'Email unavailable')} · {formatDate(row.created_at)}</p><p className="mt-1 break-all font-mono text-[10px] text-slate-400">Conversation {String(row.conversation_id || '—')}</p></div>
+              <div className="flex shrink-0 items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${statusStyle(String(row.review_status || 'pending'))}`}>{String(row.review_status || 'pending')}</span>{row.review_status !== 'reviewed' && <button disabled={savingSpelling === id} onClick={() => void markFeedbackReviewed(row)} className="rounded-lg bg-cyan-800 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-900 disabled:opacity-50">{savingSpelling === id ? 'Saving…' : 'Mark reviewed'}</button>}</div>
+            </article>;
+          })}</div> : <p className="px-5 py-14 text-center text-sm text-slate-500">No feedback records found.</p>}
+          <footer className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm text-slate-500"><span>{count} records · page {page}</span><div className="flex gap-2"><button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Previous</button><button disabled={page * PAGE_SIZE >= count || loading} onClick={() => setPage((value) => value + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Next</button></div></footer>
+        </section>}
+        {view !== 'conversations' && view !== 'spellings' && view !== 'feedback' && <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {view !== 'stats' && renderConversationList()}
           {view === 'stats' && <div className="grid gap-4 pb-2 lg:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Chat monitoring</h2><p className="mt-2 text-sm leading-6 text-slate-600">Open AI conversations to search by visitor email, review each transcript, and check recorded failures. The transcript contains real stored messages; older interactions that were not logged cannot be reconstructed.</p><button onClick={() => changeView('conversations')} className="mt-4 rounded-lg bg-cyan-800 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-900">Review conversations</button></section><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Retention and privacy</h2><p className="mt-2 text-sm leading-6 text-slate-600">Monitoring records are retained for up to 180 days. OTP values, passwords, session tokens, and API keys are not shown here.</p></section></div>}
           <p className="mt-5 pb-2 text-xs leading-5 text-slate-500">Private monitoring data is available only to configured administrators. Records are automatically pruned after 180 days.</p>
