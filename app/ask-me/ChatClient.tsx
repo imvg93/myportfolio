@@ -33,6 +33,8 @@ type Message = {
   timestamp?: string;
   modelUsed?: string;
   suggestions?: string[];
+  imageUrl?: string;
+  nameSpellingCheck?: boolean;
 };
 
 type StarterQuestion = { label: string; question: string };
@@ -207,6 +209,8 @@ export default function ChatClient() {
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackError, setFeedbackError] = useState('');
+  const [nameCorrectionOpen, setNameCorrectionOpen] = useState(false);
+  const [correctedName, setCorrectedName] = useState('');
   const [email, setEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -384,7 +388,7 @@ export default function ChatClient() {
     }
   }, [input]);
 
-  const handleSend = async (textToSend?: string) => {
+  const handleSend = async (textToSend?: string, spellingCorrection?: string) => {
     const text = (textToSend ?? input).trim();
     if (!text || loading) return;
     const activeConversationId = conversationId || createUuid();
@@ -415,6 +419,7 @@ export default function ChatClient() {
         body: JSON.stringify({
           conversationId: activeConversationId,
           requestId: createUuid(),
+          ...(spellingCorrection ? { nameSpellingCorrection: { correctedSpelling: spellingCorrection } } : {}),
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),
       });
@@ -434,12 +439,14 @@ export default function ChatClient() {
         role: 'assistant',
         content: reply,
         modelUsed: json.model_used || 'GPT-4o RAG',
+        imageUrl: typeof json?.image_url === 'string' && json.image_url.trim() ? json.image_url.trim() : undefined,
         suggestions: Array.isArray(json?.suggestions)
           ? Array.from(new Set<string>(json.suggestions
             .filter((suggestion: unknown): suggestion is string => typeof suggestion === 'string')
             .map((suggestion: string) => suggestion.trim())
             .filter((suggestion: string) => suggestion.length > 0))).slice(0, 4)
           : [],
+        nameSpellingCheck: json?.name_spelling_check === true,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -476,6 +483,8 @@ export default function ChatClient() {
     setFeedbackRating(0);
     setFeedbackComment('');
     setFeedbackError('');
+    setNameCorrectionOpen(false);
+    setCorrectedName('');
     shouldAutoScrollRef.current = true;
     feedRef.current?.scrollTo({ top: 0, behavior: 'auto' });
     starterQuestionsRequestedRef.current = false;
@@ -805,7 +814,46 @@ export default function ChatClient() {
                       {m.content}
                     </p>
                   ) : (
-                    <FormattedContent content={m.content} />
+                    <>
+                      <FormattedContent content={m.content} />
+                      {m.imageUrl && (
+                        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-950 shadow-lg shadow-black/30">
+                          <div className="flex items-center gap-2 border-b border-slate-800 bg-slate-900/70 px-4 py-2.5">
+                            <Layers3 className="h-4 w-4 text-cyan-400" />
+                            <span className="text-xs font-semibold uppercase tracking-widest text-cyan-300">
+                              System Architecture
+                            </span>
+                          </div>
+                          <a
+                            href={m.imageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group block"
+                            title="Click to view full size"
+                          >
+                            <div className="relative">
+                              <img
+                                src={m.imageUrl}
+                                alt="Gireesh Portfolio Architecture Diagram"
+                                className="w-full object-contain transition-opacity group-hover:opacity-90"
+                                loading="lazy"
+                              />
+                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                                <span className="rounded-full bg-black/60 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+                                  Open full size ↗
+                                </span>
+                              </div>
+                            </div>
+                          </a>
+                        </div>
+                      )}
+                      {m.nameSpellingCheck && m.id === latestAssistantMessageId && !loading && (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-800/70 pt-3" aria-label="Confirm the name spelling">
+                          <button type="button" onClick={() => handleSend('Yes, that spelling is correct.')} className="min-h-9 rounded-lg border border-emerald-700/70 bg-emerald-950/50 px-3 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-900/60">Yes, it is correct</button>
+                          <button type="button" onClick={() => { setCorrectedName(''); setNameCorrectionOpen(true); }} className="min-h-9 rounded-lg border border-cyan-700/70 bg-cyan-950/50 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-900/60">No, correct spelling</button>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {m.role === 'assistant' && m.id === latestAssistantMessageId && !loading && !!m.suggestions?.length && (
@@ -941,6 +989,43 @@ export default function ChatClient() {
               : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`} role="status">
               Thanks for your feedback.
             </p>
+          )}
+
+          {nameCorrectionOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setNameCorrectionOpen(false); }}>
+              <form
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="name-correction-title"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const spelling = correctedName.trim();
+                  if (!spelling || loading) return;
+                  setNameCorrectionOpen(false);
+                  handleSend(`The correct spelling is ${spelling}.`, spelling);
+                }}
+                className={`w-full max-w-md rounded-2xl border p-5 shadow-2xl ${theme === 'dark' ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-slate-200 bg-white text-slate-900'}`}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-500">Name spelling</p>
+                <h2 id="name-correction-title" className="mt-2 text-lg font-semibold">What is the correct spelling?</h2>
+                <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Type the person’s name as it should appear. We’ll save it for admin review.</p>
+                <label className="mt-4 block text-sm font-medium" htmlFor="correct-person-name">Correct name</label>
+                <input
+                  id="correct-person-name"
+                  autoFocus
+                  required
+                  maxLength={200}
+                  value={correctedName}
+                  onChange={(event) => setCorrectedName(event.target.value)}
+                  className={`mt-1.5 min-h-11 w-full rounded-xl border px-3 text-base outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 ${theme === 'dark' ? 'border-slate-700 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-900'}`}
+                  placeholder="Type the correct name"
+                />
+                <div className="mt-5 flex justify-end gap-2">
+                  <button type="button" onClick={() => setNameCorrectionOpen(false)} className={`min-h-10 rounded-lg px-4 text-sm font-medium ${theme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}>Cancel</button>
+                  <button type="submit" disabled={!correctedName.trim() || loading} className="min-h-10 rounded-lg bg-cyan-600 px-4 text-sm font-semibold text-white hover:bg-cyan-500 disabled:opacity-50">Send correction</button>
+                </div>
+              </form>
+            </div>
           )}
 
         </div>

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import '../src/index.css';
 import { TextShimmer } from '../src/components/ui/text-shimmer';
+import { MorphingText } from '../src/components/ui/liquid-text';
 import { Dock, DockIcon, DockItem, DockLabel } from '../src/components/ui/dock';
 import HomePlaceholderModal from '../src/components/ui/home-placeholder-modal';
 import { ProjectsPage } from '../src/components/ProjectsPage';
@@ -21,6 +22,7 @@ import {
   Award,
   Users,
   Brain,
+  Sparkles,
 } from 'lucide-react';
 
 const dockData = [
@@ -72,17 +74,45 @@ const dockData = [
     hoverColor: 'text-emerald-600 dark:text-emerald-400',
     href: '#',
   },
-  {
-    title: 'Theme',
-    icon: (
-      <SunMoon className='h-full w-full text-neutral-600 dark:text-neutral-300' />
-    ),
-    hoverColor: 'text-amber-600 dark:text-amber-400',
-    href: '#',
-  },
 ];
 
 type Page = 'home' | 'projects' | 'about' | 'skills' | 'connect';
+
+function InternalPageThemeButton({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="fixed right-6 top-6 z-50 flex h-11 items-center gap-2 rounded-full bg-white px-3 text-sm font-medium text-neutral-700 shadow-lg transition hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-200"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      <SunMoon className="h-4 w-4" />
+      <span className="hidden sm:inline">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+    </button>
+  );
+}
+
+const GREETINGS = [
+  'Hello',
+  'నమస్కారం',
+  'नमस्ते',
+  'வணக்கம்',
+  'ನಮಸ್ಕಾರ',
+  'നമസ്കാരം',
+  'Hola',
+  'Bonjour',
+  'Olá',
+  'Ciao',
+  'こんにちは',
+  '你好',
+  'مرحبا',
+  'Привет',
+  'Merhaba',
+  'สวัสดี',
+  'Hallo',
+  'Halo',
+];
 
 function BlurText({
   text,
@@ -141,6 +171,15 @@ export default function Home() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
+  // Keep the landing page light while preserving the saved theme on the other pages.
+  useEffect(() => {
+    const root = document.documentElement;
+    const activeTheme = currentPage === 'home' ? 'light' : theme;
+    root.classList.toggle('dark', activeTheme === 'dark');
+    root.dataset.theme = activeTheme;
+    root.style.colorScheme = activeTheme;
+  }, [currentPage, theme]);
+
   const handleDockClick = (title: string) => {
     if (title === 'Home') {
       setCurrentPage('home');
@@ -155,8 +194,6 @@ export default function Home() {
       setCurrentPage('connect');
     } else if (title === 'Insight AI') {
       router.push('/ask-me');
-    } else if (title === 'Theme') {
-      toggleTheme();
     }
   };
 
@@ -171,6 +208,7 @@ export default function Home() {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Back</span>
         </button>
+        <InternalPageThemeButton theme={theme} onToggle={toggleTheme} />
         <ProjectsPage />
       </div>
     );
@@ -187,6 +225,7 @@ export default function Home() {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Back</span>
         </button>
+        <InternalPageThemeButton theme={theme} onToggle={toggleTheme} />
         <AboutMePage />
       </div>
     );
@@ -203,6 +242,7 @@ export default function Home() {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Back</span>
         </button>
+        <InternalPageThemeButton theme={theme} onToggle={toggleTheme} />
         <SkillsPage />
       </div>
     );
@@ -219,6 +259,7 @@ export default function Home() {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Back</span>
         </button>
+        <InternalPageThemeButton theme={theme} onToggle={toggleTheme} />
         <ConnectRoomPage />
       </div>
     );
@@ -228,16 +269,14 @@ export default function Home() {
     <main
       className="relative flex min-h-screen min-h-[100svh] w-full flex-col items-center px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6 sm:px-6 sm:pt-8"
       style={{
-        background: theme === 'dark'
-          ? 'radial-gradient(ellipse 180% 120% at center top, #1e293b 0%, #0f172a 46%, #020617 100%)'
-          : 'radial-gradient(ellipse 180% 120% at center top, rgba(191, 219, 254, 1) 0%, rgba(147, 197, 253, 0.65) 18%, rgba(191, 219, 254, 0.45) 35%, rgba(219, 234, 254, 0.3) 50%, rgba(239, 246, 255, 0.2) 65%, rgba(255, 255, 255, 1) 80%)',
+        background: 'radial-gradient(ellipse 180% 120% at center top, rgba(191, 219, 254, 1) 0%, rgba(147, 197, 253, 0.65) 18%, rgba(191, 219, 254, 0.45) 35%, rgba(219, 234, 254, 0.3) 50%, rgba(239, 246, 255, 0.2) 65%, rgba(255, 255, 255, 1) 80%)',
         fontFamily: 'Be Vietnam Pro, sans-serif'
       }}
     >
       {/* Top Branding Element */}
       <div className="relative z-10 mb-2 sm:mb-4">
-        <div className="flex items-center gap-3 rounded-full bg-white/85 px-5 py-2.5 shadow-sm backdrop-blur dark:bg-neutral-900/85 sm:gap-4 sm:px-6 sm:py-3">
-          <span className="text-lg font-bold text-black dark:text-white" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>Portfolio</span>
+        <div className="flex items-center gap-3 rounded-full bg-white/85 px-5 py-2.5 shadow-sm backdrop-blur sm:gap-4 sm:px-6 sm:py-3">
+          <span className="text-lg font-bold text-black" style={{ fontFamily: 'Be Vietnam Pro, sans-serif' }}>Portfolio</span>
           <div className="w-px h-4 bg-gray-300"></div>
           <TextShimmer 
             as="span" 
@@ -250,20 +289,36 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="relative z-10 flex w-full max-w-7xl flex-1 flex-col items-center justify-center py-5 text-center sm:py-8" aria-labelledby="home-title">
+      <section className="relative z-10 flex w-full max-w-7xl flex-1 -translate-y-3 flex-col items-center justify-center py-5 text-center sm:translate-y-0 sm:py-8" aria-labelledby="home-title">
         <h1 id="home-title" className="relative isolate text-center font-mono font-bold uppercase leading-[0.76] tracking-[-0.09em]">
-          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: theme === 'dark' ? '#C3E41D' : '#56720A' }}>
+          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: '#56720A' }}>
             <BlurText text="GIREESH" animateBy="letters" delay={55} />
           </span>
-          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: theme === 'dark' ? '#C3E41D' : '#56720A' }}>
+          <span className="block whitespace-nowrap text-[clamp(3.25rem,14vw,9rem)]" style={{ color: '#56720A' }}>
             <BlurText text="VEERANKI" animateBy="letters" delay={55} />
           </span>
 
         </h1>
 
-        <p className="mt-8 max-w-2xl px-2 text-balance text-base font-medium text-slate-600 dark:text-slate-300 sm:mt-10 sm:text-xl md:text-2xl">
-          <BlurText text="My Journey With One Touch" animateBy="words" delay={110} />
-        </p>
+        <div className="relative mt-8 w-full max-w-4xl px-2 sm:mt-10">
+          <Sparkles
+            aria-hidden="true"
+            className="absolute left-[2%] top-1/2 hidden h-4 w-4 -translate-y-1/2 text-slate-500/70 sm:block"
+            strokeWidth={1.6}
+          />
+          <MorphingText
+            texts={GREETINGS}
+            className="text-slate-950"
+          />
+          <Sparkles
+            aria-hidden="true"
+            className="absolute right-[2%] top-1/2 hidden h-3.5 w-3.5 -translate-y-1/2 text-slate-400 sm:block"
+            strokeWidth={1.6}
+          />
+          <p className="mt-3 text-balance text-sm font-medium text-slate-600 sm:text-lg md:text-xl">
+            <BlurText text="My Journey With One Touch" animateBy="words" delay={90} />
+          </p>
+        </div>
 
         <div className="mt-7 flex w-full flex-col items-center gap-2 sm:mt-8">
           <button
@@ -275,7 +330,7 @@ export default function Home() {
             <span>Ask my AI</span>
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </button>
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+          <p className="text-center text-xs text-slate-500 sm:text-sm">
             Ask about my skills, projects, experience, and more.
           </p>
         </div>
@@ -285,11 +340,11 @@ export default function Home() {
             {dockData.map((item) => (
               <DockItem
                 key={item.title}
-                className={`aspect-square rounded-full touch-manipulation max-sm:aspect-auto max-sm:h-14 max-sm:flex-col ${item.title === 'Theme' ? 'max-sm:hidden' : ''}`}
-                mobileLabel={item.title === 'Connect Room' ? 'Connect' : item.title === 'Insight AI' ? 'AI' : item.title === 'Project' ? 'Projects' : item.title === 'About Me' ? 'About' : item.title === 'Theme' ? 'Theme' : item.title}
+                className="aspect-square rounded-full touch-manipulation max-sm:aspect-auto max-sm:h-14 max-sm:flex-col"
+                mobileLabel={item.title === 'Connect Room' ? 'Connect' : item.title === 'Insight AI' ? 'AI' : item.title === 'Project' ? 'Projects' : item.title === 'About Me' ? 'About' : item.title}
                 onClick={() => handleDockClick(item.title)}
               >
-                <DockLabel>{item.title === 'Theme' ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : item.title}</DockLabel>
+                <DockLabel>{item.title}</DockLabel>
                 <DockIcon
                   hoverColor={item.hoverColor}
                   className={`max-sm:h-5 ${item.title === 'Insight AI' ? 'rounded-full bg-emerald-500/15 p-1 ring-1 ring-emerald-500/60 shadow-md shadow-emerald-500/20' : ''}`}

@@ -16,4 +16,4 @@ create index if not exists chat_feedback_created_at_idx
 
 alter table public.chat_feedback enable row level security;
 revoke all on table public.chat_feedback from public, anon, authenticated, service_role;
-grant insert on table public.chat_feedback to service_role;
+grant insert, select, update on table public.chat_feedback to service_role;

@@ -9,6 +9,7 @@ import { ensureChatConversation, hashSessionId, recordChatMessage } from '@/lib/
 const BodySchema = z.object({
   conversationId: z.string().uuid(),
   requestId: z.string().uuid().optional(),
+  nameSpellingCorrection: z.object({ correctedSpelling: z.string().trim().min(1).max(200) }).strict().optional(),
   messages: z.array(
     z.object({
       role: z.enum(['user', 'assistant', 'system']).default('user'),
@@ -101,6 +102,15 @@ function isAboutPortfolioAiProject(question: string) {
   return /\b(?:ai portfolio|portfolio ai|portfolio chatbot|portfolio assistant|ai chatbot|ai assistant|chat assistant|rag|semantic retrieval|embedding pipeline|ai project|chatbot architecture)\b/i.test(question);
 }
 
+function isAboutArchitecture(question: string) {
+  return /\b(?:architect(?:ure)?|tech(?:nical)?\s*stack|system\s*design|infrastructure|how\s*(?:is\s*(?:it|this|the\s*(?:app|site|project|portfolio|system))|(?:does|do)\s*(?:it|this|the\s*(?:app|site|project|portfolio|system))\s*work)|overall\s*design|data\s*flow|backend|deploy(?:ment|ed|ing)?|diagram|aws|ecs|supabase|pinecone|mongodb|next\.?js|fastapi|docker|s3)\b/i.test(question);
+}
+
+function getArchDiagramUrl(): string | null {
+  const url = process.env.ARCH_DIAGRAM_URL?.trim();
+  return url || null;
+}
+
 function getSocialProfilePolicyReply(question: string): string | null {
   const normalized = question.toLowerCase().replace(/[’]/g, "'");
   const platform = /\b(linkedin|linked\s*in|github|instagram|facebook|twitter|x\.com|threads|tiktok)\b/i;
@@ -161,10 +171,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { conversationId, messages, requestId: suppliedRequestId } = BodySchema.parse(await req.json());
+    const { conversationId, messages, requestId: suppliedRequestId, nameSpellingCorrection } = BodySchema.parse(await req.json());
     const requestId = suppliedRequestId || randomUUID();
     const userMessage = [...messages].reverse().find((message) => message.role === 'user');
     if (!userMessage) return NextResponse.json({ ok: false, error: 'A user message is required.' }, { status: 400 });
+    const userMessageIndex = messages.lastIndexOf(userMessage);
+    const priorAssistant = [...messages.slice(0, userMessageIndex)].reverse().find((message) => message.role === 'assistant');
+    const assistantAskedForNameSpelling = Boolean(priorAssistant && /\b(?:spelling|spelled)\b[\s\S]{0,80}\b(?:correct|right)\b/i.test(priorAssistant.content));
     const sessionToken = getSessionToken(req);
     if (!sessionToken) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     let canLog = false;
@@ -189,16 +202,41 @@ export async function POST(req: Request) {
       console.error('[monitoring] user chat message write failed');
       return NextResponse.json({ ok: false, error: 'The message could not be saved. Please retry.' }, { status: 503 });
     }
+    let spellingCorrectionSaved = false;
+    if (nameSpellingCorrection && assistantAskedForNameSpelling) {
+      const priorMessages = messages.slice(0, userMessageIndex);
+      const previousUser = [...priorMessages].reverse().find((message) => message.role === 'user')?.content ?? '';
+      const mentionedContext = `Visitor asked: ${previousUser}\nAssistant spelling check: ${priorAssistant?.content ?? ''}`.slice(0, 1000);
+      try {
+        const { error: spellingError } = await (await import('@/lib/supabase')).getSupabaseAdmin()
+          .from('name_spelling_suggestions').insert({
+            conversation_id: conversationId,
+            request_id: requestId,
+            visitor_email: session.email,
+            mentioned_name_context: mentionedContext,
+            visitor_spelling: nameSpellingCorrection.correctedSpelling,
+          });
+        if (spellingError) throw spellingError;
+        spellingCorrectionSaved = true;
+      } catch {
+        // Keep chat available when the optional spelling-review table is not yet migrated.
+        console.error('[chat] name spelling suggestion could not be stored');
+      }
+    }
     const openAiKey = process.env.OPENAI_API_KEY;
     const socialProfilePolicyReply = getSocialProfilePolicyReply(userMessage.content);
-    let reply = socialProfilePolicyReply ?? '';
+    const spellingCorrectionAcknowledgement = spellingCorrectionSaved
+      ? `Okay, thanks for the correction. I’ll use “${nameSpellingCorrection?.correctedSpelling}” here. I’ve saved it for review; updating the saved record may take some time.`
+      : '';
+    let reply = spellingCorrectionAcknowledgement || socialProfilePolicyReply || '';
     let suggestions: string[] = [];
-    let generationStatus: 'succeeded' | 'failed' = socialProfilePolicyReply ? 'succeeded' : 'failed';
-    let errorCode = socialProfilePolicyReply ? '' : 'provider_unavailable';
+    let generationStatus: 'succeeded' | 'failed' = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'succeeded' : 'failed';
+    let errorCode = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? '' : 'provider_unavailable';
     let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
-    let responseModel: string | null = socialProfilePolicyReply ? 'application-policy' : openAiKey ? 'gpt-4o' : null;
+    let responseModel: string | null = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'gpt-4o' : null;
+    const archDiagramUrl = isAboutArchitecture(userMessage.content) ? getArchDiagramUrl() : null;
 
-    if (openAiKey && !socialProfilePolicyReply) {
+    if (openAiKey && !socialProfilePolicyReply && !spellingCorrectionAcknowledgement) {
       try {
         const retrievalQuery = buildRetrievalQuery(messages);
         const includeVerifiedChatArchitecture = isAboutPortfolioAiProject(retrievalQuery);
@@ -352,7 +390,7 @@ export async function POST(req: Request) {
         role: 'assistant', content: reply, generationStatus,
         durationMs: Date.now() - startedAt,
         ...(generationStatus === 'failed' ? { errorCode } : {}),
-        provider: socialProfilePolicyReply ? 'application-policy' : openAiKey ? 'openai' : 'none', model: responseModel,
+        provider: socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'openai' : 'none', model: responseModel,
         promptTokens: usage?.prompt_tokens, completionTokens: usage?.completion_tokens, totalTokens: usage?.total_tokens,
       });
     } catch {
@@ -360,7 +398,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'The reply could not be saved. Please retry.' }, { status: 503 });
     }
 
-    return NextResponse.json({ ok: true, reply, suggestions });
+    const nameSpellingCheck = /\b(?:is|does)\b[\s\S]{0,160}\b(?:spelling|spelled|spell)\b[\s\S]{0,60}\b(?:correct|right)\b/i.test(reply);
+    return NextResponse.json({ ok: true, reply, suggestions, name_spelling_check: nameSpellingCheck, ...(archDiagramUrl ? { image_url: archDiagramUrl } : {}) });
   } catch (error) {
     if (error instanceof z.ZodError || error instanceof SyntaxError) return NextResponse.json({ ok: false, error: 'Invalid chat request.' }, { status: 400 });
     console.error('Chat request failed');
