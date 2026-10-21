@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID || undefined,
   images: {
     remotePatterns: [
       {
