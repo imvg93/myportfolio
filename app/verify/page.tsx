@@ -30,6 +30,7 @@ export default function VerifyPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
+  const [welcomeOpen, setWelcomeOpen] = useState(true);
 
   const sendOtp = async () => {
     try {
@@ -136,6 +137,58 @@ export default function VerifyPage() {
 
   return (
     <div className="font-plus-jakarta relative flex min-h-[100dvh] w-full items-start justify-center overflow-x-hidden bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] px-3 pb-6 pt-20 font-sans text-slate-800 sm:items-center sm:px-4 sm:py-12">
+      <AnimatePresence>
+        {welcomeOpen && (
+          <motion.div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setWelcomeOpen(false);
+            }}
+          >
+            <motion.section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="welcome-title"
+              aria-describedby="welcome-description"
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-cyan-300/20 bg-slate-950 text-white shadow-[0_24px_100px_rgba(8,145,178,0.22)]"
+            >
+              <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-cyan-500/20 via-blue-500/10 to-transparent" aria-hidden="true" />
+              <div className="relative p-6 sm:p-8">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-200 shadow-inner shadow-cyan-300/10">
+                  <Sparkles className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">Gireesh AI Intelligence</p>
+                <h2 id="welcome-title" className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Let’s talk</h2>
+                <p id="welcome-description" className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
+                  Talk to me even when I’m not around. Ask about my work, projects, and ambitions—or get to know the personal stories, experiences, and lessons behind them. Pick a question and see where the conversation takes you.
+                </p>
+                <div className="mt-5 flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" aria-hidden="true" />
+                  <p className="text-xs leading-5 text-slate-300 sm:text-sm">
+                    Your conversation won’t be available to revisit after you log out. Come back anytime to start fresh.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setWelcomeOpen(false)}
+                  className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-cyan-950/40 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                >
+                  Start exploring <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* LUMINOUS BRIGHT AURA BACKGROUND LIGHTING */}
       <div className="pointer-events-none absolute -top-24 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-blue-300/35 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-20 -z-10 h-[450px] w-[450px] rounded-full bg-cyan-200/40 blur-[130px]" />
