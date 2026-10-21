@@ -1,3 +1,4 @@
+
 name: Deploy MyPortfolio to AWS ECS
 
 on:
@@ -9,6 +10,10 @@ on:
 permissions:
   contents: read
   id-token: write
+
+concurrency:
+  group: myportfolio-ecs-production
+  cancel-in-progress: false
 
 env:
   AWS_REGION: ap-south-1
@@ -22,6 +27,7 @@ jobs:
   deploy:
     name: Build and deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout source code
@@ -48,15 +54,33 @@ jobs:
             --query taskDefinition \
             --output json > task-definition.json
 
-          # Detect CPU architecture configured in task definition
-          CPU_ARCH=$(jq -r '.runtimePlatform.cpuArchitecture // "X86_64"' task-definition.json)
-          echo "Detected ECS Task CPU Architecture: $CPU_ARCH"
-          if [ "$CPU_ARCH" = "ARM64" ]; then
-            PLATFORM="linux/arm64"
-          else
-            PLATFORM="linux/amd64"
-          fi
+          CPU_ARCH=$(jq -r \
+            '.runtimePlatform.cpuArchitecture // "X86_64"' \
+            task-definition.json)
+
+          echo "ECS task architecture: $CPU_ARCH"
+
+          case "$CPU_ARCH" in
+            ARM64)
+              PLATFORM="linux/arm64"
+              ;;
+            X86_64)
+              PLATFORM="linux/amd64"
+              ;;
+            *)
+              echo "::error::Unsupported CPU architecture: $CPU_ARCH"
+              exit 1
+              ;;
+          esac
+
           echo "docker-platform=$PLATFORM" >> "$GITHUB_OUTPUT"
+
+          if ! jq -e --arg NAME "$CONTAINER_NAME" \
+            '.containerDefinitions | any(.name == $NAME)' \
+            task-definition.json >/dev/null; then
+            echo "::error::Container $CONTAINER_NAME not found in task definition."
+            exit 1
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -65,20 +89,23 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
+        id: build-image
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ steps.task-def-info.outputs.docker-platform }}
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          build-args: |
+            NEXT_DEPLOYMENT_ID=${{ github.sha }}
 
       - name: Register updated ECS task definition
         id: task-def
         shell: bash
+        env:
+          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         run: |
           set -euo pipefail
-
-          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:${GITHUB_SHA}"
 
           jq --arg IMAGE "$IMAGE_URI" --arg NAME "$CONTAINER_NAME" '
             del(
@@ -96,21 +123,20 @@ jobs:
               )
           ' task-definition.json > new-task-definition.json
 
-          if ! jq -e --arg NAME "$CONTAINER_NAME" \
+          jq -e --arg NAME "$CONTAINER_NAME" \
             '.containerDefinitions | any(.name == $NAME)' \
-            new-task-definition.json >/dev/null; then
-            echo "Container name was not found in the task definition."
-            exit 1
-          fi
+            new-task-definition.json >/dev/null
 
           TASK_DEF_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://new-task-definition.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
 
+          echo "Registered task definition: $TASK_DEF_ARN"
           echo "task-definition-arn=$TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Amazon ECS
+        shell: bash
         run: |
           set -euo pipefail
 
@@ -118,40 +144,61 @@ jobs:
             --cluster "$ECS_CLUSTER" \
             --service "$ECS_SERVICE" \
             --task-definition "${{ steps.task-def.outputs.task-definition-arn }}" \
-            --force-new-deployment
+            --health-check-grace-period-seconds 120
 
       - name: Wait for ECS service stability
+        shell: bash
         run: |
           set +e
-          echo "Waiting for ECS service $ECS_SERVICE to stabilize..."
+
+          echo "Waiting for ECS service to stabilize..."
+
           aws ecs wait services-stable \
             --cluster "$ECS_CLUSTER" \
             --services "$ECS_SERVICE"
+
           STATUS=$?
-          if [ $STATUS -ne 0 ]; then
-            echo "::error::ECS service failed to reach stable state within timeout!"
-            echo "=== Recent ECS Service Events ==="
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::ECS service did not reach a stable state."
+
+            echo "=== Current service status and events ==="
             aws ecs describe-services \
               --cluster "$ECS_CLUSTER" \
               --services "$ECS_SERVICE" \
-              --query 'services[0].events[0:20].[createdAt,message]' \
-              --output table || true
+              --query 'services[0].{Status:status,Desired:desiredCount,Running:runningCount,Pending:pendingCount,TaskDefinition:taskDefinition,Deployments:deployments[*].{Status:status,TaskDefinition:taskDefinition,Running:runningCount,Pending:pendingCount},Events:events[0:15].[createdAt,message]}' \
+              --output json || true
 
-            echo "=== Stopped Tasks Details ==="
+            echo "=== Recent stopped task details ==="
             STOPPED_TASKS=$(aws ecs list-tasks \
               --cluster "$ECS_CLUSTER" \
               --service-name "$ECS_SERVICE" \
               --desired-status STOPPED \
-              --query 'taskArns[0:5]' \
-              --output text || true)
+              --max-results 10 \
+              --query 'taskArns' \
+              --output text 2>/dev/null || true)
 
             if [ -n "$STOPPED_TASKS" ] && [ "$STOPPED_TASKS" != "None" ]; then
               aws ecs describe-tasks \
                 --cluster "$ECS_CLUSTER" \
                 --tasks $STOPPED_TASKS \
-                --query 'tasks[].[taskArn,stoppedReason,stopCode,containers[].[name,exitCode,reason]]' \
+                --query 'tasks[].{Task:taskArn,LastStatus:lastStatus,StopCode:stopCode,StoppedReason:stoppedReason,StartedAt:startedAt,StoppedAt:stoppedAt,Containers:containers[].{Name:name,ExitCode:exitCode,Reason:reason,Image:image}}' \
                 --output json || true
+            else
+              echo "Stopped tasks could not be listed. Check IAM permissions or task history."
             fi
-            exit $STATUS
+
+            exit "$STATUS"
           fi
-          echo "ECS service reached stable state successfully!"
+
+          echo "ECS service reached a stable state."
+
+      - name: Report deployed revision
+        if: success()
+        shell: bash
+        run: |
+          aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query 'services[0].{Status:status,Desired:desiredCount,Running:runningCount,TaskDefinition:taskDefinition}' \
+            --output table
