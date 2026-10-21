@@ -626,7 +626,7 @@ export default function ChatClient() {
               <div className="flex min-w-0 items-center gap-1.5">
                 <span className="font-sans text-sm font-bold leading-tight tracking-tight text-white sm:hidden">Gireesh</span>
                 <span className="hidden whitespace-nowrap font-sans text-base font-bold leading-tight tracking-tight text-white sm:inline">
-                  Gireesh’s Digital Mind
+                  Gireesh AI Intelligence
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-950/70 border border-emerald-700 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
