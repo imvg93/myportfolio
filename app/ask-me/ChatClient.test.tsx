@@ -75,6 +75,11 @@ describe('/ask-me chat client', () => {
     expect(screen.getByRole('button', { name: 'Ask: Discover My AI Work' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ask: Explore My Technical Skills' })).toBeInTheDocument();
 
+    const input = screen.getByPlaceholderText('Ask Gireesh anything');
+    fireEvent.change(input, { target: { value: 'Ready' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send message to Gireesh' })).toBeEnabled());
+    fireEvent.change(input, { target: { value: '' } });
+
     fireEvent.click(screen.getByRole('button', { name: 'Ask: Explore My Projects' }));
     await waitFor(() => {
       const chatCall = (global.fetch as jest.Mock).mock.calls.find(([url]) => String(url) === '/api/chat');
@@ -87,7 +92,6 @@ describe('/ask-me chat client', () => {
     expect(await screen.findByText('Here is the answer from the assistant.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: "Gireesh's AI Assistant" })).not.toBeInTheDocument();
 
-    const input = screen.getByPlaceholderText('Ask Gireesh anything');
     fireEvent.change(input, { target: { value: 'What have you built?' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send message to Gireesh' }));
 
@@ -97,6 +101,8 @@ describe('/ask-me chat client', () => {
   it('offers feedback once after five answered questions and submits one rating', async () => {
     const { container } = render(<ChatClient />);
     const input = screen.getByPlaceholderText('Ask Gireesh anything');
+    fireEvent.change(input, { target: { value: 'Question 1' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send message to Gireesh' })).toBeEnabled());
     const feed = container.querySelector('.overflow-y-auto') as HTMLElement;
     Object.defineProperties(feed, {
       scrollHeight: { configurable: true, value: 1000 },

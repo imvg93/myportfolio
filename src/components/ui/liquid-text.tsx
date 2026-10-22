@@ -13,9 +13,6 @@ type MorphingTextProps = {
 
 function useMorphingText(texts: string[]) {
   const textIndex = useRef(0);
-  const progress = useRef(0);
-  const cooldown = useRef(PAUSE_SECONDS);
-  const previousTime = useRef(0);
   const firstText = useRef<HTMLSpanElement>(null);
   const secondText = useRef<HTMLSpanElement>(null);
 
@@ -41,39 +38,41 @@ function useMorphingText(texts: string[]) {
     }
 
     textIndex.current = 0;
-    progress.current = 0;
-    cooldown.current = PAUSE_SECONDS;
-    previousTime.current = 0;
     renderFrame(0);
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) return;
 
     let frameId = 0;
-    const animate = (now: number) => {
-      if (previousTime.current === 0) previousTime.current = now;
-      const delta = Math.min((now - previousTime.current) / 1000, 0.1);
-      previousTime.current = now;
-
-      if (cooldown.current > 0) {
-        cooldown.current = Math.max(0, cooldown.current - delta);
-        renderFrame(0);
-      } else {
-        progress.current += delta;
-        const fraction = Math.min(progress.current / MORPH_SECONDS, 1);
-        renderFrame(fraction);
-        if (fraction === 1) {
-          textIndex.current = (textIndex.current + 1) % texts.length;
-          progress.current = 0;
-          cooldown.current = PAUSE_SECONDS;
-        }
-      }
-
+    let pauseId = 0;
+    let progress = 0;
+    let previousTime = 0;
+    const startMorph = () => {
+      previousTime = 0;
       frameId = window.requestAnimationFrame(animate);
     };
+    const animate = (now: number) => {
+      if (previousTime === 0) previousTime = now;
+      progress += Math.min((now - previousTime) / 1000, 0.1);
+      previousTime = now;
 
-    frameId = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(frameId);
+      const fraction = Math.min(progress / MORPH_SECONDS, 1);
+      renderFrame(fraction);
+      if (fraction === 1) {
+        textIndex.current = (textIndex.current + 1) % texts.length;
+        progress = 0;
+        renderFrame(0);
+        pauseId = window.setTimeout(startMorph, PAUSE_SECONDS * 1000);
+      } else {
+        frameId = window.requestAnimationFrame(animate);
+      }
+    };
+
+    pauseId = window.setTimeout(startMorph, PAUSE_SECONDS * 1000);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(pauseId);
+    };
   }, [renderFrame, texts]);
 
   return { firstText, secondText };
@@ -82,7 +81,6 @@ function useMorphingText(texts: string[]) {
 export function MorphingText({ texts, className }: MorphingTextProps) {
   const { firstText, secondText } = useMorphingText(texts);
   const filterId = useId().replaceAll(":", "");
-
   return (
     <div
       role="img"
@@ -103,13 +101,7 @@ export function MorphingText({ texts, className }: MorphingTextProps) {
         className={cn("absolute inset-x-0 top-1/2 mx-auto inline-block w-full -translate-y-1/2 whitespace-nowrap", className)}
       />
       <svg className="absolute h-0 w-0" aria-hidden="true" focusable="false">
-        <filter
-          id={`liquid-threshold-${filterId}`}
-          x="-20%"
-          y="-35%"
-          width="140%"
-          height="170%"
-        >
+        <filter id={`liquid-threshold-${filterId}`} x="-20%" y="-35%" width="140%" height="170%">
           <feColorMatrix
             in="SourceGraphic"
             type="matrix"

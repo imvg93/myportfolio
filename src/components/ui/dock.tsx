@@ -6,7 +6,6 @@ import {
   useTransform,
   type SpringOptions,
   AnimatePresence,
-  type TapInfo,
 } from 'framer-motion';
 import React, {
   Children,
@@ -154,16 +153,6 @@ function DockItem({ children, className, onClick, mobileLabel }: DockItemProps) 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('DockItem clicked, onClick exists:', !!onClick);
-    if (onClick) {
-      console.log('Calling onClick handler');
-      onClick();
-    }
-  };
-
-  const handleTap = (event: MouseEvent | TouchEvent | PointerEvent, info: TapInfo) => {
-    event.preventDefault();
-    event.stopPropagation();
     if (onClick) {
       onClick();
     }
@@ -178,7 +167,6 @@ function DockItem({ children, className, onClick, mobileLabel }: DockItemProps) 
       onFocus={() => isHovered.set(1)}
       onBlur={() => isHovered.set(0)}
       onClick={onClick ? handleClick : undefined}
-      onTap={onClick ? handleTap : undefined}
       className={cn(
         'relative inline-flex items-center justify-center',
         className,

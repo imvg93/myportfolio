@@ -82,6 +82,18 @@
   animation: home-blur-text-in 550ms ease-out both;
 }
 
+@media (max-width: 639px) {
+  @keyframes home-blur-text-in-mobile {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .home-blur-text-enter {
+    animation-name: home-blur-text-in-mobile;
+    animation-duration: 300ms;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-blur-text-enter { animation: none; }
 }

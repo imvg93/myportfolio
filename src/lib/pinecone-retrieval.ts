@@ -2,7 +2,18 @@ const APPROVED_PRIVATE_SOURCE_IDS = [
   'v2_private_relationships_boundaries',
   'v2_private_lifestyle_daily_routine',
   'v2_private_family_financial_vow',
+  'gireesh_personal_profile',
+  'gireesh_college_life',
+  'gireesh_friendships',
+  'gireesh_temple_visits_and_personal_faith',
+  'gireesh_twin_ai_inspiration',
+  'gireesh_personal_routine_weekdays',
+  'gireesh_personal_routine_weekend',
+  'gireesh_devices_accessories',
+  'gireesh_gaming_interests',
+  'gireesh_home_ownership_goal',
 ] as const;
+const PERSONAL_LIFE_ATTENDANCE_SOURCE_ID = 'gireesh_college_attendance_context_restricted';
 
 // Exclude these even if stale Pinecone metadata or Supabase visibility calls them public.
 const OWNER_PRIVATE_FAMILY_SOURCE_IDS = [
@@ -41,7 +52,7 @@ function hasEducationTopic(text: string) {
 
 function educationQueryMode(query: string): EducationQueryMode {
   const current = latestQuestion(query);
-  const restrictedTopic = /\b(?:attendance|absen(?:t|ce|ces)|backlogs?|arrears?)\b/i.test(current);
+  const restrictedTopic = /\b(?:attendance|attend\w*|absen(?:t|ce|ces)|backlogs?|arrears?)\b/i.test(current);
   if (restrictedTopic) return 'restricted';
   if (hasEducationTopic(current)) return 'profile';
 
@@ -93,8 +104,8 @@ export async function retrievePortfolioContext(question: string): Promise<string
       ? {
           source_id: {
             $in: educationMode === 'restricted'
-              ? [EDUCATION_PROFILE_SOURCE_ID, EDUCATION_RESTRICTED_SOURCE_ID]
-              : [EDUCATION_PROFILE_SOURCE_ID],
+              ? [EDUCATION_PROFILE_SOURCE_ID, EDUCATION_RESTRICTED_SOURCE_ID, 'gireesh_college_life', PERSONAL_LIFE_ATTENDANCE_SOURCE_ID]
+              : [EDUCATION_PROFILE_SOURCE_ID, 'gireesh_college_life'],
           },
         }
       : {

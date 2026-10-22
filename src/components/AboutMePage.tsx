@@ -57,7 +57,7 @@ export function AboutMePage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f4f3ef] pb-12 pt-24 text-[#17232e] dark:bg-[#0c1218] dark:text-[#f2f4f3] sm:pb-16 sm:pt-28">
+    <main className="min-h-screen min-h-[100svh] overflow-x-clip bg-[#f4f3ef] pb-12 pt-24 text-[#17232e] dark:bg-[#0c1218] dark:text-[#f2f4f3] sm:pb-16 sm:pt-28">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
         <header className="mb-6 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#68737a] dark:text-[#a0abb1] sm:mb-8">
           <span className="h-px w-8 bg-[#dc6b3d]" />

@@ -104,7 +104,7 @@ export function ConnectRoomPage() {
   });
 
   return (
-    <main className="overflow-hidden min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-neutral-900 dark:to-neutral-800 py-8 md:py-20">
+    <main className="min-h-screen min-h-[100svh] overflow-x-clip bg-gradient-to-b from-white to-gray-50 py-8 dark:from-neutral-900 dark:to-neutral-800 md:py-20">
       <PhotoGallery socialMediaItems={updatedSocialMediaItems} />
       <EmailModal 
         isOpen={isEmailModalOpen} 

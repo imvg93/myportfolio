@@ -160,7 +160,11 @@ SMTP_SECURE=false
 # Supabase (Service Role key is required server-side)
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=...
+
+TRIAL_SESSION_SECRET=...
 ```
+
+The chat allows two successful answers before email sign-in. Apply the SQL in [`supabase/migrations/20261022120000_chat_trial.sql`](supabase/migrations/20261022120000_chat_trial.sql) in the Supabase SQL Editor. See [`docs/anonymous-chat-preview.md`](docs/anonymous-chat-preview.md) for setup and behavior.
 
 ### Database
 

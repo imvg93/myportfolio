@@ -62,7 +62,7 @@ describe('retrievePortfolioContext', () => {
 
     const requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(requestBody.query.filter).toEqual({
-      source_id: { $in: ['gireesh_education_knowledge_20261021'] },
+      source_id: { $in: ['gireesh_education_knowledge_20261021', 'gireesh_college_life'] },
     });
   });
 
@@ -79,6 +79,8 @@ describe('retrievePortfolioContext', () => {
       source_id: { $in: [
         'gireesh_education_knowledge_20261021',
         'gireesh_education_attendance_backlogs_20261021',
+        'gireesh_college_life',
+        'gireesh_college_attendance_context_restricted',
       ] },
     });
   });
@@ -97,7 +99,7 @@ describe('retrievePortfolioContext', () => {
     await retrievePortfolioContext('Visitor: Which college did Gireesh attend?\nAssistant: He studied at a college.\nCurrent visitor question: What else?');
     requestBody = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(requestBody.query.filter).toEqual({
-      source_id: { $in: ['gireesh_education_knowledge_20261021'] },
+      source_id: { $in: ['gireesh_education_knowledge_20261021', 'gireesh_college_life'] },
     });
   });
 });

@@ -148,7 +148,7 @@ export default function RadialOrbitalTimeline({
 
     let rotationTimer: NodeJS.Timeout;
 
-    if (autoRotate && viewMode === "orbital") {
+    if (autoRotate && viewMode === "orbital" && window.matchMedia("(min-width: 768px)").matches) {
 
       rotationTimer = setInterval(() => {
 
@@ -262,7 +262,7 @@ export default function RadialOrbitalTimeline({
 
     <div
 
-      className="w-full h-screen flex flex-col items-center justify-center bg-black overflow-hidden"
+      className="hidden md:flex w-full h-screen flex-col items-center justify-center bg-black overflow-hidden"
 
       ref={containerRef}
 

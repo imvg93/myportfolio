@@ -83,7 +83,7 @@ function InternalPageThemeButton({ theme, onToggle }: { theme: 'light' | 'dark';
     <button
       type="button"
       onClick={onToggle}
-      className="fixed right-6 top-6 z-50 flex h-11 items-center gap-2 rounded-full bg-white px-3 text-sm font-medium text-neutral-700 shadow-lg transition hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-200"
+      className="fixed right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex h-11 items-center gap-2 rounded-full bg-white px-3 text-sm font-medium text-neutral-700 shadow-lg transition hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-200 sm:right-6 sm:top-6"
       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
     >
@@ -199,10 +199,10 @@ export default function Home() {
 
   if (currentPage === 'projects') {
     return (
-      <div className="min-h-screen w-full relative">
+      <div className="relative min-h-screen min-h-[100svh] w-full overflow-x-clip">
         <button
           onClick={() => setCurrentPage('home')}
-          className="fixed top-6 left-6 z-50 bg-white dark:bg-neutral-800 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+          className="fixed left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex min-h-11 items-center gap-2 rounded-full bg-white px-3 shadow-lg transition-shadow hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-white sm:left-6 sm:top-6"
           aria-label="Back to home"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -216,10 +216,10 @@ export default function Home() {
 
   if (currentPage === 'about') {
     return (
-      <div className="min-h-screen w-full relative">
+      <div className="relative min-h-screen min-h-[100svh] w-full overflow-x-clip">
         <button
           onClick={() => setCurrentPage('home')}
-          className="fixed top-6 left-6 z-50 bg-white dark:bg-neutral-800 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+          className="fixed left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex min-h-11 items-center gap-2 rounded-full bg-white px-3 shadow-lg transition-shadow hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-white sm:left-6 sm:top-6"
           aria-label="Back to home"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -233,10 +233,10 @@ export default function Home() {
 
   if (currentPage === 'skills') {
     return (
-      <div className="min-h-screen w-full relative">
+      <div className="relative min-h-screen min-h-[100svh] w-full overflow-x-clip">
         <button
           onClick={() => setCurrentPage('home')}
-          className="fixed top-6 left-6 z-50 bg-white dark:bg-neutral-800 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+          className="fixed left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex min-h-11 items-center gap-2 rounded-full bg-white px-3 shadow-lg transition-shadow hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-white sm:left-6 sm:top-6"
           aria-label="Back to home"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -250,10 +250,10 @@ export default function Home() {
 
   if (currentPage === 'connect') {
     return (
-      <div className="min-h-screen w-full relative">
+      <div className="relative min-h-screen min-h-[100svh] w-full overflow-x-clip">
         <button
           onClick={() => setCurrentPage('home')}
-          className="fixed top-6 left-6 z-50 bg-white dark:bg-neutral-800 rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+          className="fixed left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex min-h-11 items-center gap-2 rounded-full bg-white px-3 shadow-lg transition-shadow hover:shadow-xl dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-white sm:left-6 sm:top-6"
           aria-label="Back to home"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -280,7 +280,7 @@ export default function Home() {
           <div className="w-px h-4 bg-gray-300"></div>
           <TextShimmer 
             as="span" 
-            className="text-sm font-normal"
+            className="text-xs font-normal sm:text-sm"
             duration={2}
             spread={2}
           >
@@ -336,11 +336,11 @@ export default function Home() {
         </div>
 
         <div className="mt-8 flex w-full justify-center sm:mt-10 md:mt-12" aria-label="Portfolio navigation">
-          <Dock className="items-end bg-transparent pb-2" magnification={76} distance={140} panelHeight={64}>
+          <Dock className="items-end gap-4 bg-transparent px-1 pb-2 sm:gap-4 sm:px-4" magnification={76} distance={140} panelHeight={64}>
             {dockData.map((item) => (
               <DockItem
                 key={item.title}
-                className="aspect-square rounded-full touch-manipulation max-sm:aspect-auto max-sm:h-14 max-sm:flex-col"
+                className="aspect-square rounded-full touch-manipulation max-sm:!h-14 max-sm:!w-9 max-sm:aspect-auto max-sm:flex-col"
                 mobileLabel={item.title === 'Connect Room' ? 'Connect' : item.title === 'Insight AI' ? 'AI' : item.title === 'Project' ? 'Projects' : item.title === 'About Me' ? 'About' : item.title}
                 onClick={() => handleDockClick(item.title)}
               >
