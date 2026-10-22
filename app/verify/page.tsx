@@ -31,6 +31,12 @@ export default function VerifyPage() {
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const [welcomeOpen, setWelcomeOpen] = useState(true);
+  const [returnTo, setReturnTo] = useState('/ask-me');
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('returnTo');
+    if (requested?.startsWith('/') && !requested.startsWith('//')) setReturnTo(requested);
+  }, []);
 
   const sendOtp = async () => {
     try {
@@ -74,7 +80,7 @@ export default function VerifyPage() {
       });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || 'Invalid or expired code');
-      router.replace('/ask-me');
+      router.replace(returnTo);
     } catch (e: any) {
       setMessage(e?.message || 'Verification failed. Please check your code.');
     } finally {
@@ -136,11 +142,11 @@ export default function VerifyPage() {
   };
 
   return (
-    <div className="font-plus-jakarta relative flex min-h-[100dvh] w-full items-start justify-center overflow-x-hidden bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] px-3 pb-6 pt-20 font-sans text-slate-800 sm:items-center sm:px-4 sm:py-12">
+    <div className="font-plus-jakarta relative flex min-h-[100svh] w-full items-start justify-center overflow-x-clip bg-gradient-to-b from-[#eef6ff] via-[#f8fafc] to-[#ffffff] px-3 pb-6 pt-20 font-sans text-slate-800 sm:min-h-[100dvh] sm:items-center sm:px-4 sm:py-12">
       <AnimatePresence>
         {welcomeOpen && (
           <motion.div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/75 p-4 sm:bg-slate-950/70 sm:backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -190,9 +196,9 @@ export default function VerifyPage() {
       </AnimatePresence>
 
       {/* LUMINOUS BRIGHT AURA BACKGROUND LIGHTING */}
-      <div className="pointer-events-none absolute -top-24 left-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-blue-300/35 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/3 -right-20 -z-10 h-[450px] w-[450px] rounded-full bg-cyan-200/40 blur-[130px]" />
-      <div className="pointer-events-none absolute -bottom-20 left-1/3 -z-10 h-[450px] w-[450px] rounded-full bg-indigo-200/30 blur-[130px]" />
+      <div className="pointer-events-none absolute -top-24 left-1/4 -z-10 h-72 w-72 rounded-full bg-blue-300/35 blur-[64px] sm:h-[500px] sm:w-[500px] sm:blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/3 -right-20 -z-10 h-72 w-72 rounded-full bg-cyan-200/40 blur-[64px] sm:h-[450px] sm:w-[450px] sm:blur-[130px]" />
+      <div className="pointer-events-none absolute -bottom-20 left-1/3 -z-10 h-72 w-72 rounded-full bg-indigo-200/30 blur-[64px] sm:h-[450px] sm:w-[450px] sm:blur-[130px]" />
 
       {/* DELICATE DOT TEXTURE */}
       <div
@@ -206,7 +212,7 @@ export default function VerifyPage() {
       {/* TOP BACK TO PORTFOLIO BUTTON */}
       <button
         onClick={() => router.push('/')}
-        className="absolute left-3 top-3 z-20 group inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur-md transition-all hover:border-blue-400 hover:bg-white hover:text-slate-900 sm:left-4 sm:top-4 sm:text-sm"
+        className="fixed left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-20 group inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 shadow-sm transition-all hover:border-blue-400 hover:bg-white hover:text-slate-900 sm:left-4 sm:top-4 sm:bg-white/90 sm:backdrop-blur-md sm:text-sm"
       >
         <ArrowLeft className="h-4 w-4 text-slate-500 transition-transform group-hover:-translate-x-1" />
         <span>Portfolio</span>
@@ -217,7 +223,7 @@ export default function VerifyPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="relative w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/90 p-5 shadow-2xl backdrop-blur-2xl sm:p-8"
+        className="relative w-full max-w-md rounded-3xl border border-slate-200/90 bg-white/95 p-5 shadow-2xl sm:bg-white/90 sm:p-8 sm:backdrop-blur-2xl"
       >
         {/* Glowing Neural Brain Floating Badge */}
         <div className="flex flex-col items-center text-center">
@@ -249,7 +255,7 @@ export default function VerifyPage() {
           </h1>
           <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xs">
             {step === 'form'
-              ? 'Enter your name and email to unlock full, unfiltered access to my AI twin.'
+              ? 'Sign in with email to continue your conversation.'
               : `We sent a 6-digit verification code to ${email}`}
           </p>
         </div>

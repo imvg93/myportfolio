@@ -60,7 +60,7 @@ const assistantStack = ["Next.js", "OpenAI", "Supabase", "Pinecone"];
 
 export function ProjectsPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f4f5f0] text-[#17201d] dark:bg-[#080d0d] dark:text-[#edf5f2]">
+    <main className="relative min-h-screen min-h-[100svh] overflow-x-clip bg-[#f4f5f0] text-[#17201d] dark:bg-[#080d0d] dark:text-[#edf5f2]">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-[0.22] dark:opacity-[0.12]"
@@ -180,7 +180,7 @@ export function ProjectsPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between border-t border-white/10 px-6 py-4 text-[10px] font-medium uppercase tracking-[0.16em] text-white/45 sm:px-10 lg:px-14">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-4 py-4 text-[9px] font-medium uppercase tracking-[0.12em] text-white/45 sm:flex-nowrap sm:px-10 sm:text-[10px] sm:tracking-[0.16em] lg:px-14">
             <span>Portfolio assistant</span>
             <span className="inline-flex items-center gap-2">
               Built to make the work easier to explore

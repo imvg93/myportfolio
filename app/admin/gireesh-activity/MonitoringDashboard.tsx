@@ -228,13 +228,13 @@ export default function MonitoringDashboard() {
   };
 
   const renderConversationList = () => (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="flex min-h-[60vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
         <div><h2 className="font-semibold text-slate-900">Conversations</h2><p className="mt-0.5 text-xs text-slate-500">Most recently active first</p></div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{count} total</span>
       </div>
       {error && <p role="alert" className="m-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
-      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto overscroll-contain">
+      <div className="max-h-[65vh] min-h-[40vh] flex-1 divide-y divide-slate-100 overflow-y-auto overscroll-contain">
         {loading ? Array.from({ length: 5 }, (_, index) => <div key={index} className="animate-pulse px-5 py-5"><div className="h-3 w-44 rounded bg-slate-200" /><div className="mt-3 h-3 w-4/5 rounded bg-slate-100" /></div>) : null}
         {!loading && view === 'conversations' && rows.map((row, index) => {
           const id = typeof row.conversation_id === 'string' ? row.conversation_id : '';
@@ -261,7 +261,7 @@ export default function MonitoringDashboard() {
   );
 
   const renderConversationDetail = () => (
-    <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="flex min-h-[60vh] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {detailLoading && !conversation ? <div className="space-y-4 overflow-y-auto p-6" aria-live="polite"><div className="h-5 w-52 animate-pulse rounded bg-slate-200" /><div className="h-16 animate-pulse rounded-xl bg-slate-100" /><div className="h-20 animate-pulse rounded-xl bg-slate-100" /></div> : null}
       {detailError && <p role="alert" className="m-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{detailError}</p>}
       {conversation && <>
@@ -272,7 +272,7 @@ export default function MonitoringDashboard() {
           </div>
         </header>
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-3 text-xs text-slate-500"><span>{messageCount} messages · page {messagePage}</span><span>{conversation.ai_model || conversation.ai_provider || 'Model unavailable'}</span></div>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/70 p-4 sm:p-5" aria-live="polite">
+        <div className="max-h-[65vh] min-h-[40vh] flex-1 space-y-4 overflow-y-auto overscroll-contain bg-slate-50/70 p-4 sm:p-5" aria-live="polite">
           {messages.map((message) => <article key={message.message_id} className={`w-full max-w-[88%] rounded-xl border p-3 sm:max-w-[76%] ${message.role === 'user' ? 'ml-auto border-cyan-200 bg-cyan-50' : 'mr-auto border-slate-200 bg-white'}`}>
             <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2"><span className={`text-[10px] font-bold uppercase tracking-wide ${message.role === 'user' ? 'text-cyan-800' : 'text-slate-600'}`}>{message.role === 'user' ? 'Visitor' : 'AI assistant'}{message.generation_status === 'failed' && <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-rose-700">Failed</span>}{message.role === 'user' && message.has_assistant_reply === false && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">No reply saved</span>}</span><time className="text-[10px] text-slate-500">{formatDate(message.created_at)}</time></div>
             <p className="break-words whitespace-pre-wrap text-[13px] leading-5 text-slate-800">{message.content}</p>
@@ -287,8 +287,8 @@ export default function MonitoringDashboard() {
   );
 
   return (
-    <main className="h-[100dvh] overflow-hidden bg-[#f5f7fb] px-3 py-3 text-slate-900 sm:px-6 sm:py-5">
-      <div className="mx-auto flex h-full min-h-0 max-w-[1500px] flex-col">
+    <main className="min-h-screen min-h-[100dvh] overflow-y-auto overscroll-y-contain bg-[#f5f7fb] px-3 py-3 text-slate-900 sm:px-6 sm:py-5">
+      <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] max-w-[1500px] flex-col sm:min-h-[calc(100dvh-2.5rem)]">
         {!selected && <header className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-5 sm:p-6">
           <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">Private admin workspace</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Activity monitoring</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review verified visitor activity and read the exact messages and replies recorded by the chatbot.</p><p className="mt-1 text-xs font-medium text-emerald-700">Live updates every 5 seconds while this tab is open.</p></div>
           <a href="/" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">View portfolio</a>
@@ -310,10 +310,10 @@ export default function MonitoringDashboard() {
           <button onClick={applyFilters} className="min-h-10 rounded-lg bg-cyan-800 px-5 text-sm font-semibold text-white hover:bg-cyan-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2">Apply filters</button>
         </section>}
 
-        {view === 'conversations' && <div className="min-h-0 flex-1 overflow-hidden">
-          <div className={selected ? 'grid h-full min-h-0 gap-4 lg:grid-cols-[minmax(19rem,0.85fr)_minmax(0,1.35fr)]' : 'h-full min-h-0'}>
-            <div className={selected ? 'hidden h-full min-h-0 lg:block' : 'h-full min-h-0'}>{renderConversationList()}</div>
-            {selected && <div className="h-full min-h-0 min-w-0">{renderConversationDetail()}</div>}
+        {view === 'conversations' && <div className="min-h-[60vh] flex-1">
+          <div className={selected ? 'grid min-h-[60vh] gap-4 lg:grid-cols-[minmax(19rem,0.85fr)_minmax(0,1.35fr)]' : 'min-h-[60vh]'}>
+            <div className={selected ? 'hidden min-h-[60vh] lg:block' : 'min-h-[60vh]'}>{renderConversationList()}</div>
+            {selected && <div className="min-h-[60vh] min-w-0">{renderConversationDetail()}</div>}
           </div>
         </div>}
         {view === 'spellings' && <section className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white shadow-sm">

@@ -7,6 +7,17 @@ const privateIds = [
   'v2_private_relationships_boundaries',
   'v2_private_lifestyle_daily_routine',
   'v2_private_family_financial_vow',
+  'gireesh_personal_profile',
+  'gireesh_college_life',
+  'gireesh_college_attendance_context_restricted',
+  'gireesh_friendships',
+  'gireesh_temple_visits_and_personal_faith',
+  'gireesh_twin_ai_inspiration',
+  'gireesh_personal_routine_weekdays',
+  'gireesh_personal_routine_weekend',
+  'gireesh_devices_accessories',
+  'gireesh_gaming_interests',
+  'gireesh_home_ownership_goal',
 ];
 const ownerPrivateFamilyIds = new Set([
   'v2_private_family_history',

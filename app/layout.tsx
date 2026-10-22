@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import '../src/index.css';
 import { Analytics } from '@vercel/analytics/react';
-import { MobileNotice } from '../src/components/ui/mobile-notice';
 
 export const metadata: Metadata = {
   title: 'Portfolio - Gireesh Veeranki',
@@ -24,7 +23,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </head>
       <body>
-        <MobileNotice />
         {children}
         <Analytics />
       </body>

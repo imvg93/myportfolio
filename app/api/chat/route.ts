@@ -5,6 +5,7 @@ import { buildPortfolioSystemPrompt } from '@/lib/portfolio-context';
 import { retrievePortfolioContext } from '@/lib/pinecone-retrieval';
 import { randomUUID } from 'node:crypto';
 import { ensureChatConversation, hashSessionId, recordChatMessage } from '@/lib/monitoring';
+import { getChatTrialToken, hashChatTrialToken } from '@/lib/chat-trial';
 
 const BodySchema = z.object({
   conversationId: z.string().uuid(),
@@ -135,6 +136,59 @@ function getSocialProfilePolicyReply(question: string): string | null {
   return "I can answer general questions, but I can’t provide or guess another person’s social profile or account details.";
 }
 
+function getVillageFriendsPolicyReply(question: string): string | null {
+  const asksAboutVillageFriends = /\b(?:village|neighbou?rhood|hometown)\b/i.test(question)
+    && /\bfriend(?:s|ship)?\b/i.test(question);
+  if (!asksAboutVillageFriends) return null;
+  return "The information I have doesn’t specify Gireesh’s village or neighborhood friends by name. It names Karthik as a close friend from school, but doesn’t say he is a village friend.";
+}
+
+function getHomeCirclePolicyReply(question: string): string | null {
+  const mentionsHomeArea = /\b(?:home|house|nearby|neighbou?rhood|local area)\b/i.test(question);
+  const asksGenerallyWho = /^\s*(?:who|which people|who all|what are the names|name the|do you know who)\b/i.test(question);
+  if (!mentionsHomeArea || !asksGenerallyWho) return null;
+  return 'Gireesh does not usually roam outside near his home and keeps a very small circle. The information I have does not name who is in that circle.';
+}
+
+function getCurrentRoutineReply(question: string, now = new Date()): string | null {
+  const asksWhatDoingNow = /\bwhat\b.{0,80}\b(?:doing|up to)\b.{0,40}\b(?:now|currently|at the moment|right now)\b/i.test(question)
+    || /\bwhat(?:'s| is)\s+(?:(?:gireesh|girish|he)\s+)?(?:doing|up to)\s+(?:right\s+)?now\b/i.test(question);
+  if (!asksWhatDoingNow) return null;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  const weekday = values.weekday;
+  const minutes = Number(values.hour) * 60 + Number(values.minute);
+  const time = `${values.hour}:${values.minute}`;
+
+  if (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(weekday)) {
+    if (minutes >= 23 * 60 + 30 || minutes < 7 * 60) return `Based on his usual weekday routine, Gireesh is likely sleeping now (${time} in India); he usually wakes at 7:00 a.m. This is a schedule-based estimate, not live location information.`;
+    if (minutes >= 10 * 60 && minutes < 19 * 60) return `Based on his usual weekday routine, Gireesh is scheduled to be at the office now (${time} in India). This is a schedule-based estimate, not live location information.`;
+    if (minutes >= 19 * 60 && minutes < 20 * 60 + 30) return `Based on his usual weekday routine, Gireesh is likely travelling home now (${time} in India), usually by bike. This is a schedule-based estimate, not live location information.`;
+    if (minutes >= 20 * 60 + 30 && minutes < 21 * 60 + 30) return `Based on his usual weekday routine, Gireesh is likely freshening up and having dinner now (${time} in India). This is a schedule-based estimate, not live location information.`;
+    if (minutes >= 21 * 60 + 30 && minutes < 23 * 60) return `Based on his usual weekday routine, Gireesh is likely out for his evening walk now (${time} in India). This is a schedule-based estimate, not live location information.`;
+    return `It is ${time} in India. His weekday routine does not specify what he is doing at this time, so I can’t say more reliably.`;
+  }
+
+  if (weekday === 'Saturday') {
+    if (minutes < 10 * 60 + 30) return `Based on his usual Saturday routine, Gireesh is likely sleeping before his 10:30 a.m. wake-up time (${time} in India). This is a schedule-based estimate, not live location information.`;
+    return `It is ${time} in India. Gireesh’s Saturday plan is flexible; after waking around 10:30 a.m., he may go out for errands or personal tasks, but the schedule doesn’t confirm what he is doing right now.`;
+  }
+
+  if (minutes < 8 * 60) return `Based on his usual Sunday routine, Gireesh is likely sleeping before his 8:00 a.m. wake-up time (${time} in India). This is a schedule-based estimate, not live location information.`;
+  if (minutes >= 11 * 60 && minutes < 18 * 60) {
+    if (minutes >= 13 * 60 && minutes < 16 * 60) return `It is ${time} in India. His usual Sunday plan is to hang out with friends, but the schedule also lists time with his pet Joy during this period, so his exact activity is uncertain.`;
+    return `Based on his usual Sunday plan, Gireesh is likely hanging out with friends now (${time} in India). Plans can vary, so this is not a live confirmation.`;
+  }
+  return `It is ${time} in India. His Sunday schedule is flexible at this time, so I can’t say exactly what he is doing right now.`;
+}
+
 function getWebCitations(response: {
   output: Array<{
     type: string;
@@ -166,9 +220,9 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: 'Authentication service unavailable' }, { status: 503 });
   }
-  if (!session) {
-    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  let trialTokenHash: string | null = null;
+  let trialRequestId: string | null = null;
+  let trialReservationPending = false;
 
   try {
     const { conversationId, messages, requestId: suppliedRequestId, nameSpellingCorrection } = BodySchema.parse(await req.json());
@@ -179,21 +233,42 @@ export async function POST(req: Request) {
     const priorAssistant = [...messages.slice(0, userMessageIndex)].reverse().find((message) => message.role === 'assistant');
     const assistantAskedForNameSpelling = Boolean(priorAssistant && /\b(?:spelling|spelled)\b[\s\S]{0,80}\b(?:correct|right)\b/i.test(priorAssistant.content));
     const sessionToken = getSessionToken(req);
-    if (!sessionToken) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-    let canLog = false;
-    try {
-      canLog = await ensureChatConversation({
-        conversationId,
-        email: session.email,
-        sessionId: hashSessionId(sessionToken),
-      });
-    } catch {
-      console.error('[monitoring] conversation setup failed');
-      return NextResponse.json({ ok: false, error: 'Chat storage is temporarily unavailable.' }, { status: 503 });
+    if (session) {
+      if (!sessionToken) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+      let canLog = false;
+      try {
+        canLog = await ensureChatConversation({
+          conversationId,
+          email: session.email,
+          sessionId: hashSessionId(sessionToken),
+        });
+      } catch {
+        console.error('[monitoring] conversation setup failed');
+        return NextResponse.json({ ok: false, error: 'Chat storage is temporarily unavailable.' }, { status: 503 });
+      }
+      if (!canLog) return NextResponse.json({ ok: false, error: 'This conversation is unavailable.' }, { status: 403 });
+    } else {
+      const trialToken = getChatTrialToken(req);
+      if (!trialToken) return NextResponse.json({ ok: false, error: 'Start a chat trial before sending a message.' }, { status: 401 });
+      trialTokenHash = hashChatTrialToken(trialToken);
+      trialRequestId = requestId;
+      let reservation: string;
+      try {
+        const { data, error } = await (await import('@/lib/supabase')).getSupabaseAdmin().rpc('reserve_chat_trial_question', {
+          p_token_hash: trialTokenHash, p_request_id: requestId, p_conversation_id: conversationId,
+        });
+        if (error) throw error;
+        reservation = data;
+      } catch {
+        return NextResponse.json({ ok: false, error: 'The chat trial is temporarily unavailable.' }, { status: 503 });
+      }
+      if (reservation === 'exhausted') return NextResponse.json({ ok: false, reason: 'trial_exhausted', error: 'Sign in to continue chatting.' }, { status: 402 });
+      if (reservation === 'duplicate') return NextResponse.json({ ok: false, error: 'This trial question was already submitted.' }, { status: 409 });
+      if (reservation !== 'allowed') return NextResponse.json({ ok: false, error: 'Start a new chat trial before sending a message.' }, { status: 401 });
+      trialReservationPending = true;
     }
-    if (!canLog) return NextResponse.json({ ok: false, error: 'This conversation is unavailable.' }, { status: 403 });
     const startedAt = Date.now();
-    try {
+    if (session && sessionToken) try {
       await recordChatMessage({
         conversationId, requestId, email: session.email, sessionId: hashSessionId(sessionToken),
         role: 'user', content: userMessage.content, generationStatus: 'received',
@@ -203,7 +278,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'The message could not be saved. Please retry.' }, { status: 503 });
     }
     let spellingCorrectionSaved = false;
-    if (nameSpellingCorrection && assistantAskedForNameSpelling) {
+    if (session && nameSpellingCorrection && assistantAskedForNameSpelling) {
       const priorMessages = messages.slice(0, userMessageIndex);
       const previousUser = [...priorMessages].reverse().find((message) => message.role === 'user')?.content ?? '';
       const mentionedContext = `Visitor asked: ${previousUser}\nAssistant spelling check: ${priorAssistant?.content ?? ''}`.slice(0, 1000);
@@ -225,18 +300,22 @@ export async function POST(req: Request) {
     }
     const openAiKey = process.env.OPENAI_API_KEY;
     const socialProfilePolicyReply = getSocialProfilePolicyReply(userMessage.content);
+    const villageFriendsPolicyReply = getVillageFriendsPolicyReply(userMessage.content);
+    const homeCirclePolicyReply = getHomeCirclePolicyReply(userMessage.content);
+    const currentRoutineReply = getCurrentRoutineReply(userMessage.content);
+    const applicationPolicyReply = socialProfilePolicyReply || villageFriendsPolicyReply || homeCirclePolicyReply || currentRoutineReply;
     const spellingCorrectionAcknowledgement = spellingCorrectionSaved
       ? `Okay, thanks for the correction. I’ll use “${nameSpellingCorrection?.correctedSpelling}” here. I’ve saved it for review; updating the saved record may take some time.`
       : '';
-    let reply = spellingCorrectionAcknowledgement || socialProfilePolicyReply || '';
+    let reply = spellingCorrectionAcknowledgement || applicationPolicyReply || '';
     let suggestions: string[] = [];
-    let generationStatus: 'succeeded' | 'failed' = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'succeeded' : 'failed';
-    let errorCode = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? '' : 'provider_unavailable';
+    let generationStatus: 'succeeded' | 'failed' = applicationPolicyReply || spellingCorrectionAcknowledgement ? 'succeeded' : 'failed';
+    let errorCode = applicationPolicyReply || spellingCorrectionAcknowledgement ? '' : 'provider_unavailable';
     let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
-    let responseModel: string | null = socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'gpt-4o' : null;
+    let responseModel: string | null = applicationPolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'gpt-4o' : null;
     const archDiagramUrl = isAboutArchitecture(userMessage.content) ? getArchDiagramUrl() : null;
 
-    if (openAiKey && !socialProfilePolicyReply && !spellingCorrectionAcknowledgement) {
+    if (openAiKey && !applicationPolicyReply && !spellingCorrectionAcknowledgement) {
       try {
         const retrievalQuery = buildRetrievalQuery(messages);
         const includeVerifiedChatArchitecture = isAboutPortfolioAiProject(retrievalQuery);
@@ -305,7 +384,7 @@ export async function POST(req: Request) {
           usage = completion.usage;
         }
         reply = removeGenericClosingInvitation(generatedReply);
-        if (reply) {
+        if (reply && !applicationPolicyReply && !spellingCorrectionAcknowledgement) {
           generationStatus = 'succeeded';
           errorCode = '';
 
@@ -384,13 +463,13 @@ export async function POST(req: Request) {
         : 'The chatbot is not configured yet. Please try again later.';
     }
 
-    try {
+    if (session && sessionToken) try {
       await recordChatMessage({
         conversationId, requestId, email: session.email, sessionId: hashSessionId(sessionToken),
         role: 'assistant', content: reply, generationStatus,
         durationMs: Date.now() - startedAt,
         ...(generationStatus === 'failed' ? { errorCode } : {}),
-        provider: socialProfilePolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'openai' : 'none', model: responseModel,
+        provider: applicationPolicyReply || spellingCorrectionAcknowledgement ? 'application-policy' : openAiKey ? 'openai' : 'none', model: responseModel,
         promptTokens: usage?.prompt_tokens, completionTokens: usage?.completion_tokens, totalTokens: usage?.total_tokens,
       });
     } catch {
@@ -398,9 +477,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'The reply could not be saved. Please retry.' }, { status: 503 });
     }
 
+    let trialQuestionsLeft: number | undefined;
+    if (trialReservationPending && trialTokenHash && trialRequestId) {
+      const { data: answeredCount, error: finishError } = await (await import('@/lib/supabase')).getSupabaseAdmin().rpc('finish_chat_trial_question', {
+        p_token_hash: trialTokenHash, p_request_id: trialRequestId, p_succeeded: generationStatus === 'succeeded',
+      });
+      if (finishError || Number(answeredCount) < 0) throw finishError || new Error('Trial usage could not be finalized.');
+      trialReservationPending = false;
+      trialQuestionsLeft = Math.max(0, 2 - Number(answeredCount));
+    }
+
     const nameSpellingCheck = /\b(?:is|does)\b[\s\S]{0,160}\b(?:spelling|spelled|spell)\b[\s\S]{0,60}\b(?:correct|right)\b/i.test(reply);
-    return NextResponse.json({ ok: true, reply, suggestions, name_spelling_check: nameSpellingCheck, ...(archDiagramUrl ? { image_url: archDiagramUrl } : {}) });
+    return NextResponse.json({ ok: true, reply, suggestions, name_spelling_check: nameSpellingCheck, ...(trialQuestionsLeft !== undefined ? { trial_questions_left: trialQuestionsLeft, trial_answered: generationStatus === 'succeeded' } : {}), ...(archDiagramUrl ? { image_url: archDiagramUrl } : {}) });
   } catch (error) {
+    if (trialReservationPending && trialTokenHash && trialRequestId) {
+      try {
+        await (await import('@/lib/supabase')).getSupabaseAdmin().rpc('finish_chat_trial_question', {
+          p_token_hash: trialTokenHash, p_request_id: trialRequestId, p_succeeded: false,
+        });
+      } catch { console.error('[chat] trial reservation release failed'); }
+    }
     if (error instanceof z.ZodError || error instanceof SyntaxError) return NextResponse.json({ ok: false, error: 'Invalid chat request.' }, { status: 400 });
     console.error('Chat request failed');
     return NextResponse.json({ ok: false, error: 'Chat request failed. Please try again.' }, { status: 500 });

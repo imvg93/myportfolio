@@ -35,6 +35,7 @@ type Message = {
   suggestions?: string[];
   imageUrl?: string;
   nameSpellingCheck?: boolean;
+  generationStatus?: 'succeeded' | 'failed';
 };
 
 type StarterQuestion = { label: string; question: string };
@@ -213,6 +214,10 @@ export default function ChatClient() {
   const [correctedName, setCorrectedName] = useState('');
   const [email, setEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
+  const [trialError, setTrialError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -317,17 +322,23 @@ export default function ChatClient() {
   useEffect(() => {
     const viewport = window.visualViewport;
     const root = document.documentElement;
+    let frame = 0;
 
     const syncVisibleViewport = () => {
       if (!viewport) return;
-
-      const keyboardIsOpen = window.innerHeight - viewport.height > 120;
-      root.style.setProperty('--askme-viewport-height', `${viewport.height}px`);
-      root.style.setProperty('--askme-viewport-offset-top', `${viewport.offsetTop}px`);
-      root.style.setProperty(
-        '--askme-footer-safe-bottom',
-        keyboardIsOpen ? '0px' : 'env(safe-area-inset-bottom)',
-      );
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const keyboardIsOpen = window.innerHeight - viewport.height > 120;
+        if (keyboardIsOpen) {
+          root.style.setProperty('--askme-viewport-height', `${viewport.height}px`);
+          root.style.setProperty('--askme-viewport-offset-top', `${viewport.offsetTop}px`);
+          root.style.setProperty('--askme-footer-safe-bottom', '0px');
+        } else {
+          root.style.removeProperty('--askme-viewport-height');
+          root.style.removeProperty('--askme-viewport-offset-top');
+          root.style.removeProperty('--askme-footer-safe-bottom');
+        }
+      });
     };
 
     syncVisibleViewport();
@@ -336,6 +347,7 @@ export default function ChatClient() {
     window.addEventListener('resize', syncVisibleViewport);
 
     return () => {
+      cancelAnimationFrame(frame);
       viewport?.removeEventListener('resize', syncVisibleViewport);
       viewport?.removeEventListener('scroll', syncVisibleViewport);
       window.removeEventListener('resize', syncVisibleViewport);
@@ -353,30 +365,75 @@ export default function ChatClient() {
     shouldAutoScrollRef.current = distanceToBottom < 120;
   };
 
-  // Scroll to bottom smoothly only when the user is already near the latest message
+  // Keep mobile scrolling immediate so expanding replies do not fight repeated
+  // smooth-scroll animations. Desktop can use the softer animated movement.
   useEffect(() => {
     if (messages.length === 0) return;
     if (!shouldAutoScrollRef.current) return;
     const feed = feedRef.current;
-    feed?.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
+    const behavior: ScrollBehavior = window.innerWidth < 640
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth';
+    feed?.scrollTo({ top: feed.scrollHeight, behavior });
   }, [messages, loading]);
 
   // Auth check
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const initializeAccess = async () => {
       try {
         const res = await fetch('/api/me', { cache: 'no-store' });
         const data = await res.json();
         if (data?.email) {
+          if (cancelled) return;
           setEmail(String(data.email));
           if (data?.name) setUserName(String(data.name));
+          const savedTranscript = sessionStorage.getItem('chat-trial-transcript');
+          if (savedTranscript) {
+            try {
+              const transcript = JSON.parse(savedTranscript) as { conversationId?: string; messages?: Message[]; input?: string };
+              if (transcript.conversationId && Array.isArray(transcript.messages)) {
+                setConversationId(transcript.conversationId);
+                setMessages(transcript.messages);
+                setInput(transcript.input || '');
+                await fetch('/api/chat/claim-trial', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    conversationId: transcript.conversationId,
+                    messages: transcript.messages.map(({ id, role, content, generationStatus }) => ({ id, role, content, generationStatus })),
+                  }),
+                });
+              }
+            } catch { /* Preserve a normal signed-in chat if a saved trial transcript is malformed. */ }
+            sessionStorage.removeItem('chat-trial-transcript');
+          }
         } else {
-          router.replace('/verify');
+          const trialResponse = await fetch('/api/chat/trial', { method: 'POST', cache: 'no-store' });
+          const trial = await trialResponse.json().catch(() => null);
+          if (cancelled) return;
+          if (trialResponse.ok && trial?.ok) {
+            const remaining = Number(trial.remaining ?? 0);
+            setTrialRemaining(remaining);
+          } else {
+            setTrialRemaining(0);
+            setTrialError(trial?.reason === 'network_limit'
+              ? 'This network has reached its anonymous question limit. Sign in to continue.'
+              : trial?.error || 'Anonymous chat is temporarily unavailable. Sign in to continue.');
+            setLoginPromptOpen(true);
+          }
         }
       } catch {
-        router.replace('/verify');
+        if (!cancelled) {
+          const trialResponse = await fetch('/api/chat/trial', { method: 'POST', cache: 'no-store' }).catch(() => null);
+          const trial = await trialResponse?.json().catch(() => null);
+          if (!cancelled && trialResponse?.ok && trial?.ok) setTrialRemaining(Number(trial.remaining ?? 0));
+          else if (!cancelled) { setTrialRemaining(0); setLoginPromptOpen(true); }
+        }
       }
-    })();
+    };
+    void initializeAccess();
+    return () => { cancelled = true; };
   }, [router]);
 
   // Auto-resize textarea
@@ -391,6 +448,15 @@ export default function ChatClient() {
   const handleSend = async (textToSend?: string, spellingCorrection?: string) => {
     const text = (textToSend ?? input).trim();
     if (!text || loading) return;
+    if (!email && trialRemaining === null) {
+      if (textToSend) setInput(text);
+      return;
+    }
+    if (!email && trialRemaining === 0) {
+      setInput(text);
+      setLoginPromptOpen(true);
+      return;
+    }
     const activeConversationId = conversationId || createUuid();
     if (!conversationId) setConversationId(activeConversationId);
 
@@ -425,6 +491,17 @@ export default function ChatClient() {
       });
 
       const json = await res.json().catch(() => null);
+      if (res.status === 402 && json?.reason === 'trial_exhausted') {
+        setMessages((prev) => prev.filter((message) => message.id !== userMsg.id));
+        setInput(text);
+        setTrialRemaining(0);
+        setLoginPromptOpen(true);
+        return;
+      }
+      if (typeof json?.trial_questions_left === 'number') {
+        const remaining = Math.max(0, Number(json.trial_questions_left));
+        setTrialRemaining(remaining);
+      }
       const reply = res.status === 401
         ? 'Your chat session has expired. Please sign in again to continue.'
         : res.status === 503
@@ -447,6 +524,7 @@ export default function ChatClient() {
             .filter((suggestion: string) => suggestion.length > 0))).slice(0, 4)
           : [],
         nameSpellingCheck: json?.name_spelling_check === true,
+        generationStatus: !res.ok || json?.ok !== true || (json?.trial_questions_left !== undefined && json?.trial_answered === false) ? 'failed' : 'succeeded',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -458,6 +536,7 @@ export default function ChatClient() {
           id: createMessageId(),
           role: 'assistant',
           content: 'The connection ended before I received a reply. Your message may appear in the transcript without an assistant answer. Please retry your question.',
+          generationStatus: 'failed',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -485,6 +564,7 @@ export default function ChatClient() {
     setFeedbackError('');
     setNameCorrectionOpen(false);
     setCorrectedName('');
+    setLoginPromptOpen(false);
     shouldAutoScrollRef.current = true;
     feedRef.current?.scrollTo({ top: 0, behavior: 'auto' });
     starterQuestionsRequestedRef.current = false;
@@ -524,6 +604,11 @@ export default function ChatClient() {
     setMenuOpen(false);
     await fetch('/api/logout', { method: 'POST' }).catch(() => undefined);
     router.replace('/verify');
+  };
+
+  const startEmailSignIn = () => {
+    sessionStorage.setItem('chat-trial-transcript', JSON.stringify({ conversationId, messages, input }));
+    router.push('/verify?returnTo=%2Fask-me');
   };
 
   const displayName = useMemo(() => {
@@ -583,14 +668,14 @@ export default function ChatClient() {
         }}
       />
 
-      {/* Mobile-only wallpaper from the supplied iPhone mockup demo. */}
+      {/* Lightweight mobile background: avoid loading a large remote wallpaper. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0 sm:hidden"
         style={{
           backgroundImage:
             theme === 'dark'
-              ? "linear-gradient(rgba(3, 7, 18, 0.58), rgba(3, 7, 18, 0.76)), url('https://cdn.21st.dev/assets/mirror/fe/fe93bc0812d60130c9eef6d68e02fa99ded883248049a9107bfb64dbd37fae34.jpg')"
+              ? 'radial-gradient(ellipse at 18% 18%, rgba(8, 145, 178, 0.13), transparent 42%), radial-gradient(ellipse at 88% 68%, rgba(79, 70, 229, 0.12), transparent 42%), linear-gradient(155deg, #030712 0%, #07111f 52%, #090817 100%)'
               : 'radial-gradient(ellipse at 18% 18%, rgba(125, 211, 252, 0.30), transparent 42%), radial-gradient(ellipse at 88% 68%, rgba(196, 181, 253, 0.24), transparent 42%), linear-gradient(155deg, #f8fafc 0%, #eef5f8 52%, #f6f3fb 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -599,7 +684,7 @@ export default function ChatClient() {
       />
 
       {/* 1. TOP HEADER (BRIGHT, CRISP, FROSTED GLASS) */}
-      <header className="askme-header relative z-30 flex min-h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/80 px-2 pb-1 pt-[calc(env(safe-area-inset-top)+0.25rem)] backdrop-blur-2xl shadow-lg shadow-black/20 sm:h-16 sm:px-6 sm:py-0">
+      <header className="askme-header relative z-30 flex min-h-14 w-full shrink-0 items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950 px-2 pb-1 pt-[calc(env(safe-area-inset-top)+0.25rem)] shadow-lg shadow-black/20 sm:h-16 sm:bg-slate-950/80 sm:px-6 sm:py-0 sm:backdrop-blur-2xl">
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <button
             onClick={() => router.back()}
@@ -729,11 +814,14 @@ export default function ChatClient() {
       >
         <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col space-y-2 sm:space-y-6">
           {/* Minimal empty state keeps the page focused on conversation */}
+          <AnimatePresence initial={false}>
           {messages.length === 0 && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              key="welcome-panel"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12, transition: { duration: 0.18 } }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
               className="flex flex-1 flex-col px-1 pb-4 pt-5 text-center sm:px-3 sm:pb-8 sm:pt-10"
             >
               <h1 className="askme-welcome-title text-xl font-semibold tracking-tight text-white sm:text-2xl">
@@ -751,7 +839,7 @@ export default function ChatClient() {
                       type="button"
                       onClick={() => handleSend(question)}
                       aria-label={`Ask: ${label}`}
-                      className="askme-starter-card group flex min-h-[58px] items-center gap-2.5 rounded-2xl border border-slate-700/70 bg-slate-950/55 p-3 text-left text-xs font-medium leading-snug text-slate-100 shadow-sm shadow-black/10 backdrop-blur-sm transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:min-h-[64px] sm:gap-3 sm:p-3.5 sm:text-sm"
+                      className="askme-starter-card group flex min-h-[58px] items-center gap-2.5 rounded-2xl border border-slate-700/70 bg-slate-950/80 p-3 text-left text-xs font-medium leading-snug text-slate-100 shadow-sm shadow-black/10 transition-colors hover:border-slate-500/80 hover:bg-slate-900/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50 sm:min-h-[64px] sm:gap-3 sm:bg-slate-950/55 sm:p-3.5 sm:text-sm sm:backdrop-blur-sm"
                     >
                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${accent}`}>
                         <SuggestionIcon className="h-4 w-4" aria-hidden="true" />
@@ -765,7 +853,6 @@ export default function ChatClient() {
           )}
 
           {/* ACTIVE CHAT FEED */}
-          <AnimatePresence initial={false}>
             {messages.map((m) => (
               <motion.div
                 key={m.id}
@@ -1033,12 +1120,18 @@ export default function ChatClient() {
 
       {/* 3. BOTTOM FLOATING PROMPT CAPSULE */}
       <footer
-        className="askme-footer relative z-30 w-full shrink-0 border-t border-slate-800/80 bg-slate-950/85 px-2 pt-1.5 backdrop-blur-2xl sm:px-6 sm:pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.45)]"
+        className="askme-footer relative z-30 w-full shrink-0 border-t border-slate-800/80 bg-slate-950 px-2 pt-1.5 sm:bg-slate-950/85 sm:px-6 sm:pt-3 sm:backdrop-blur-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.45)]"
         style={{
           paddingBottom: 'calc(var(--askme-footer-safe-bottom, env(safe-area-inset-bottom)) + 6px)',
         }}
       >
         <div className="mx-auto max-w-3xl">
+          {!email && trialRemaining !== null && (
+            <div className="mb-2 flex items-center justify-between gap-3 px-1 text-[11px] text-slate-300 sm:text-xs">
+              <span>{trialRemaining > 0 ? `${trialRemaining} ${trialRemaining === 1 ? 'question' : 'questions'} before sign-in` : trialError ? 'Sign in to start or continue chatting.' : 'That was your second answer. Sign in to continue chatting.'}</span>
+              {trialRemaining === 0 && <button type="button" onClick={() => setLoginPromptOpen(true)} className="font-semibold text-cyan-300 underline underline-offset-2">Sign in to continue</button>}
+            </div>
+          )}
           {/* Input Box */}
           <div className="askme-composer relative flex items-end gap-1.5 rounded-2xl border border-slate-700 bg-slate-950/95 p-1.5 shadow-lg shadow-black/30 transition-all focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/20 sm:gap-2 sm:p-2.5">
             <textarea
@@ -1054,13 +1147,14 @@ export default function ChatClient() {
                 }
               }}
               placeholder="Ask Gireesh anything"
+              disabled={!email && trialRemaining === 0}
               className="askme-textarea max-h-24 min-h-10 flex-1 resize-none bg-transparent px-2.5 py-2 text-base text-white placeholder-slate-500 outline-none no-scrollbar sm:max-h-36 sm:min-h-[44px] sm:px-3"
             />
 
             <button
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => handleSend()}
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || (!email && trialRemaining !== null && trialRemaining === 0) || (!email && trialRemaining === null)}
               className={`askme-send-button flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl font-medium transition-all duration-200 ${
                 input.trim() && !loading
                   ? 'bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:scale-105 active:scale-95'
@@ -1075,6 +1169,19 @@ export default function ChatClient() {
 
         </div>
       </footer>
+
+      {loginPromptOpen && !email && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLoginPromptOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="trial-signin-title" className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-950 p-5 text-slate-100 shadow-2xl sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-400">Two-question preview complete</p>
+            <h2 id="trial-signin-title" className="mt-2 text-xl font-semibold">Sign in to continue</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">You can ask two questions before signing in. Your conversation stays here while you sign in with email.</p>
+            {trialError && <p role="alert" className="mt-3 text-xs text-rose-300">{trialError}</p>}
+            <button type="button" onClick={startEmailSignIn} disabled={authLoading} className="mt-4 min-h-11 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60">Continue with email</button>
+            <button type="button" onClick={() => setLoginPromptOpen(false)} className="mt-3 min-h-9 w-full text-sm text-slate-400 hover:text-white">Maybe later</button>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
