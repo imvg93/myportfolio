@@ -287,8 +287,8 @@ export default function MonitoringDashboard() {
   );
 
   return (
-    <main className="min-h-screen min-h-[100dvh] overflow-y-auto overscroll-y-contain bg-[#f5f7fb] px-3 py-3 text-slate-900 sm:px-6 sm:py-5">
-      <div className="mx-auto flex min-h-[calc(100dvh-1.5rem)] max-w-[1500px] flex-col sm:min-h-[calc(100dvh-2.5rem)]">
+    <main className="h-screen h-[100dvh] touch-pan-y overflow-x-hidden overflow-y-auto overscroll-y-auto bg-[#f5f7fb] px-3 py-3 text-slate-900 sm:px-6 sm:py-5" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="mx-auto flex min-h-full max-w-[1500px] flex-col">
         {!selected && <header className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-5 sm:p-6">
           <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">Private admin workspace</p><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Activity monitoring</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review verified visitor activity and read the exact messages and replies recorded by the chatbot.</p><p className="mt-1 text-xs font-medium text-emerald-700">Live updates every 5 seconds while this tab is open.</p></div>
           <a href="/" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">View portfolio</a>
@@ -343,7 +343,7 @@ export default function MonitoringDashboard() {
           })}</div> : <p className="px-5 py-14 text-center text-sm text-slate-500">No feedback records found.</p>}
           <footer className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-sm text-slate-500"><span>{count} records · page {page}</span><div className="flex gap-2"><button disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Previous</button><button disabled={page * PAGE_SIZE >= count || loading} onClick={() => setPage((value) => value + 1)} className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium text-slate-700 disabled:opacity-40">Next</button></div></footer>
         </section>}
-        {view !== 'conversations' && view !== 'spellings' && view !== 'feedback' && <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {view !== 'conversations' && view !== 'spellings' && view !== 'feedback' && <div className={view === 'stats' ? 'shrink-0' : 'min-h-0 flex-1 overflow-y-auto overscroll-contain'}>
           {view !== 'stats' && renderConversationList()}
           {view === 'stats' && <div className="grid gap-4 pb-2 lg:grid-cols-2"><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Chat monitoring</h2><p className="mt-2 text-sm leading-6 text-slate-600">Open AI conversations to search by visitor email, review each transcript, and check recorded failures. The transcript contains real stored messages; older interactions that were not logged cannot be reconstructed.</p><button onClick={() => changeView('conversations')} className="mt-4 rounded-lg bg-cyan-800 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-900">Review conversations</button></section><section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="font-semibold">Retention and privacy</h2><p className="mt-2 text-sm leading-6 text-slate-600">Monitoring records are retained for up to 180 days. OTP values, passwords, session tokens, and API keys are not shown here.</p></section></div>}
           <p className="mt-5 pb-2 text-xs leading-5 text-slate-500">Private monitoring data is available only to configured administrators. Records are automatically pruned after 180 days.</p>

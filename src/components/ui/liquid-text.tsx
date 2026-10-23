@@ -41,7 +41,15 @@ function useMorphingText(texts: string[]) {
     renderFrame(0);
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return;
+    if (reduceMotion) {
+      // Keep the multilingual greeting rotating on devices that disable motion,
+      // but switch instantly instead of running the blur morph animation.
+      const intervalId = window.setInterval(() => {
+        textIndex.current = (textIndex.current + 1) % texts.length;
+        renderFrame(0);
+      }, (MORPH_SECONDS + PAUSE_SECONDS) * 1000);
+      return () => window.clearInterval(intervalId);
+    }
 
     let frameId = 0;
     let pauseId = 0;
