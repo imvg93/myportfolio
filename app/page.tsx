@@ -23,6 +23,7 @@ import {
   Users,
   Brain,
   Sparkles,
+  LoaderCircle,
 } from 'lucide-react';
 
 const dockData = [
@@ -167,9 +168,16 @@ function BlurText({
 
 export default function Home() {
   const [isHomeModalOpen, setIsHomeModalOpen] = useState(false);
+  const [openingAi, setOpeningAi] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+
+  const openAi = () => {
+    if (openingAi) return;
+    setOpeningAi(true);
+    router.push('/ask-me');
+  };
 
   // Keep the landing page light while preserving the saved theme on the other pages.
   useEffect(() => {
@@ -193,7 +201,7 @@ export default function Home() {
     } else if (title === 'Connect Room') {
       setCurrentPage('connect');
     } else if (title === 'Insight AI') {
-      router.push('/ask-me');
+      openAi();
     }
   };
 
@@ -323,12 +331,15 @@ export default function Home() {
         <div className="mt-7 flex w-full flex-col items-center gap-2 sm:mt-8">
           <button
             type="button"
-            onClick={() => router.push('/ask-me')}
-            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-3 rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/50 active:translate-y-0 sm:w-auto sm:min-w-56"
+            onClick={openAi}
+            disabled={openingAi}
+            aria-label={openingAi ? 'Opening AI chat' : 'Ask my AI'}
+            aria-busy={openingAi}
+            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-3 rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/50 active:translate-y-0 disabled:cursor-wait disabled:opacity-90 sm:w-auto sm:min-w-56"
           >
-            <Brain className="h-5 w-5" aria-hidden="true" />
-            <span>Ask my AI</span>
-            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            {openingAi ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" /> : <Brain className="h-5 w-5" aria-hidden="true" />}
+            <span>{openingAi ? 'Opening AI…' : 'Ask my AI'}</span>
+            {!openingAi && <ArrowUpRight className="h-4 w-4" aria-hidden="true" />}
           </button>
           <p className="text-center text-xs text-slate-500 sm:text-sm">
             Ask about my skills, projects, experience, and more.

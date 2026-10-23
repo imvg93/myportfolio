@@ -36,7 +36,7 @@
     "zod": "^4.1.12"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0",
     "data:normalize": "./backend/venv/bin/python backend/scripts/normalize_dataset.py",
     "data:ingest": "./backend/venv/bin/python backend/scripts/ingest_to_supabase.py",
     "pinecone:sync": "node scripts/syncApprovedPortfolioToPinecone.mjs",

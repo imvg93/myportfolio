@@ -177,6 +177,18 @@
   color: #0f172a;
 }
 
+.askme-shell.theme-light .askme-portfolio-button {
+  border-color: #7dd3fc;
+  background-color: #e0f2fe;
+  color: #0c3551;
+}
+
+.askme-shell.theme-light .askme-portfolio-button:hover {
+  border-color: #38bdf8;
+  background-color: #bae6fd;
+  color: #082f49;
+}
+
 .askme-shell.theme-light .askme-send-button.text-white {
   color: #fff;
 }

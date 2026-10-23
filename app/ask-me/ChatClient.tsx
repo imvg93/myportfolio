@@ -688,7 +688,7 @@ export default function ChatClient() {
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <button
             onClick={() => router.back()}
-            className="group hidden shrink-0 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs font-medium text-slate-200 shadow-sm transition-all hover:border-blue-400 hover:bg-slate-800 hover:text-white sm:flex sm:px-3 sm:text-sm"
+            className="askme-portfolio-button group hidden shrink-0 items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs font-medium text-slate-200 shadow-sm transition-all hover:border-blue-400 hover:bg-slate-800 hover:text-white sm:flex sm:px-3 sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 text-slate-300" />
             <span className="hidden sm:inline">Portfolio</span>
@@ -1126,10 +1126,10 @@ export default function ChatClient() {
         }}
       >
         <div className="mx-auto max-w-3xl">
-          {!email && trialRemaining !== null && (
+          {!email && (
             <div className="mb-2 flex items-center justify-between gap-3 px-1 text-[11px] text-slate-300 sm:text-xs">
-              <span>{trialRemaining > 0 ? `${trialRemaining} ${trialRemaining === 1 ? 'question' : 'questions'} before sign-in` : trialError ? 'Sign in to start or continue chatting.' : 'That was your second answer. Sign in to continue chatting.'}</span>
-              {trialRemaining === 0 && <button type="button" onClick={() => setLoginPromptOpen(true)} className="font-semibold text-cyan-300 underline underline-offset-2">Sign in to continue</button>}
+              <span>{trialRemaining === null ? (trialError ? 'Sign in to start chatting.' : 'Free chat') : trialRemaining > 0 ? `${trialRemaining} ${trialRemaining === 1 ? 'question' : 'questions'} before sign-in` : trialError ? 'Sign in to start or continue chatting.' : 'That was your second answer. Sign in to continue chatting.'}</span>
+              <button type="button" onClick={() => setLoginPromptOpen(true)} className="shrink-0 rounded-md px-2 py-1 font-semibold text-cyan-300 underline underline-offset-2 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400">Sign in</button>
             </div>
           )}
           {/* Input Box */}
