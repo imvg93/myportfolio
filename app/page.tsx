@@ -176,7 +176,13 @@ export default function Home() {
   const openAi = () => {
     if (openingAi) return;
     setOpeningAi(true);
-    router.push('/ask-me');
+    const navigate = () => router.push('/ask-me');
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      // Let mobile paint the pressed/loading state before starting navigation.
+      window.requestAnimationFrame(() => window.requestAnimationFrame(navigate));
+      return;
+    }
+    navigate();
   };
 
   // Keep the landing page light while preserving the saved theme on the other pages.
@@ -335,7 +341,7 @@ export default function Home() {
             disabled={openingAi}
             aria-label={openingAi ? 'Opening AI chat' : 'Ask my AI'}
             aria-busy={openingAi}
-            className="inline-flex min-h-12 w-full max-w-xs items-center justify-center gap-3 rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/50 active:translate-y-0 disabled:cursor-wait disabled:opacity-90 sm:w-auto sm:min-w-56"
+            className="inline-flex min-h-12 w-full max-w-xs touch-manipulation items-center justify-center gap-3 rounded-full bg-emerald-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/50 active:translate-y-0 max-sm:min-h-14 max-sm:active:translate-y-0.5 max-sm:active:scale-[0.97] max-sm:active:bg-emerald-700 max-sm:active:shadow-md disabled:cursor-wait disabled:opacity-90 sm:w-auto sm:min-w-56"
           >
             {openingAi ? <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" /> : <Brain className="h-5 w-5" aria-hidden="true" />}
             <span>{openingAi ? 'Opening AI…' : 'Ask my AI'}</span>
@@ -372,6 +378,14 @@ export default function Home() {
         isOpen={isHomeModalOpen}
         onClose={() => setIsHomeModalOpen(false)}
       />
+      {openingAi && (
+        <div className="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/20 px-6 backdrop-blur-sm max-sm:flex" role="status" aria-live="polite">
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-4 text-slate-800 shadow-xl">
+            <LoaderCircle className="h-6 w-6 animate-spin text-emerald-600" aria-hidden="true" />
+            <span className="text-sm font-semibold">Opening AI chat…</span>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
